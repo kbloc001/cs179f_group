@@ -1,2 +1,6 @@
 Name              Email                 Phone #
 Klarissa Block    kbloc001 @ ucr.edu    951-992-9154
+Johnny Do         jdo007@ucr.edu
+Derrick Lam       dlam012@ucr.edu
+Kenneth Mayo      kmayo001@ucr.edu    
+John Padilla      jpadi004@ucr.edu
