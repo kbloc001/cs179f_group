@@ -55,7 +55,7 @@ int _truncate(const char *path, off_t newsize){}
 
 int _utime(const char *path, struct utimbuf *ubuf){}
 
-
+// Part 1
 int _open(const char *path, struct fuse_file_info *fi){}
 
 
