@@ -42,9 +42,9 @@ int my_fdatasync(int fd);
 
 int my_fsync(int fd);
 
-int my_lsetxattr(const char *path, const char *name, const void *value,                  size_t size, int flags);
+int my_lsetxattr(const char *path, const char *name, const void *value, size_t size, int flags);
 
-ssize_t my_lgetxattr(const char *path, const char *name,                                     const void *value, size_t size);
+ssize_t my_lgetxattr(const char *path, const char *name, const void *value, size_t size);
 
 ssize_t my_llistxattr(const char *path, char *list, size_t size);
 
