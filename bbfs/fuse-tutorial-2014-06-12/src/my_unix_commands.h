@@ -1,3 +1,6 @@
+#ifndef _MY_UNIX_COMMANDS_H_
+#define _MY_UNIX_COMMANDS_H_
+
 int my_lstat(const char *path, struct stat *buf);
 
 int my_readlink(const char *path, char *buf, size_t bufsiz);
@@ -59,3 +62,5 @@ int my_creat(const char *path, mode_t mode);
 int my_ftruncate(int fd, off_t length);
 
 int my_fstat(int fd, struct stat *buf);
+
+#endif
