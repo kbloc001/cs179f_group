@@ -1,6 +1,6 @@
 int my_lstat(const char *path, struct stat *buf);
 
-ssize_t my_readlink(const char *path, char *buf, size_t bufsiz);
+int my_readlink(const char *path, char *buf, size_t bufsiz);
 
 int my_open(const char *pathname, int flags, mode_t mode);
 
@@ -32,9 +32,9 @@ int my_utime(const char *filename, const struct utimbuf *times);
 
 int my_open(const char *pathname, int flags);
 
-ssize_t my_pread(int fd, void *buf, size_t count, off_t offset);
+int my_pread(int fd, void *buf, size_t count, off_t offset);
 
-ssize_t my_pwrite(int fd, void *buf, size_t count, off_t offset);
+int my_pwrite(int fd, void *buf, size_t count, off_t offset);
 
 int my_statvfs(const char *path, struct statvfs *buf);
 
@@ -44,9 +44,9 @@ int my_fsync(int fd);
 
 int my_lsetxattr(const char *path, const char *name, const void *value, size_t size, int flags);
 
-ssize_t my_lgetxattr(const char *path, const char *name, const void *value, size_t size);
+int my_lgetxattr(const char *path, const char *name, const void *value, size_t size);
 
-ssize_t my_llistxattr(const char *path, char *list, size_t size);
+int my_llistxattr(const char *path, char *list, size_t size);
 
 int my_lremovexattr(const char *path, const char *name);
 
