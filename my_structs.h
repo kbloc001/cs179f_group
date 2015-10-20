@@ -1,3 +1,8 @@
+typedef struct DIR {
+    dirent currentdirectory
+    char *directoryname;
+} DIR; 
+
 struct dirent {
     ino_t          d_ino;       /* inode number */
     off_t          d_off;       /* offset to the next dirent */
