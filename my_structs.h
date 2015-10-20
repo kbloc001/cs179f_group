@@ -1,5 +1,3 @@
-struct dirent {
-    ino_t          d_ino;       /* inode number */
     off_t          d_off;       /* offset to the next dirent */
     unsigned short d_reclen;    /* length of this record */
     unsigned char  d_type;      /* type of file; not supported
@@ -22,4 +20,10 @@ struct stat {
     time_t    st_mtime;   /* time of last modification */
     time_t    st_ctime;   /* time of last status change */
 };
- 
+
+typedef struct DIR {
+    dirent currentdirectory
+    char *directoryname;
+} DIR; 
+
+
