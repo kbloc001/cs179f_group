@@ -1,4 +1,4 @@
-struct struct DIR {
+struct struct dirent {
     ino_t          d_ino
     off_t          d_off;       /* offset to the next dirent */
     unsigned short d_reclen;    /* length of this record */
