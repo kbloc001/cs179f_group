@@ -240,7 +240,7 @@ int my_access( const char *fpath, int mask ) {
 }
 
 // called at line #856 of bbfs.c
-int my_creat( const char *fpath, mode_t mode ) {
+int my_create( const char *fpath, mode_t mode ) {
   return err;
 }
 
