@@ -266,9 +266,106 @@ char* my_realpath( const char* path, char* resolved_path ) {
 // which is defined in terms of lookup,
 // which is defined in terms of opendir and readdir.
 // The header file takes care of that circularity.
+
 typedef char block[4096];
-285 block* blocks[15];
-286
-287 my_DIR* fhopendir( ino_t fh ) {
-288 // if ( fh is not the handle of a directory ) return not−a−directory error;
-289 r
+
+block* blocks[15];
+
+my_DIR* fhopendir( ino_t fh ) {
+  // if ( fh is not the handle of a directory ) return not−a−directory error;
+  return new my_DIR( fh );
+}
+
+dirent* readdir( my_DIR* dirp ) {
+  off_t tmp = (dirp−>offset)−>d_reclen;
+  dirp−>offset += tmp;
+  return ( dirp−>offset < dirp−>max_offset) ? dirp−>offset : 0 ;
+}
+
+int closedir( my_DIR* dirp ) {
+  delete dirp;
+}
+
+ino_t lookup( string name, ino_t fh ) {
+  // finds and returns ino_t of file whose name is name in directory fh.
+  // This function will be used by open() and opendir().
+  my_DIR* dirp = fhopendir( fh ); // fhopendir checks if fh is handle of a dir.
+  if ( ! dirp ) return err; // cannot_open_error
+  while ( dirent* dp = readdir(dirp) ) {
+    string s = dp−>d_name; // converts C string to C++ string
+    if ( s == name ) {
+      closedir(dirp);
+      if ( dp−>d_type != DT_REG && dp−>d_type != DT_DIR ) {
+        return err;   // wrong−file−type error
+                      // later we may add more types
+      } 
+      else {
+        return dp−>d_fileno;
+      }
+    }
+  }
+  closedir(dirp); // close my_DIR asap, to reset internal data
+  return err; // name−not−found
+}
+
+
+ino_t find_inode( string fullpath ) {
+  // fullpath must starts at the root. // See how Pfeiffer does it.
+  ino_t fh = 2; // 2 is the i_no of the root directory.
+  vector<string> v = split( fullpath, "/" );
+  for ( int i = 1; i != v.size(); ++ i ) { // omit the initial null segment
+  fh = lookup( v[i], fh );
+  }
+}
+
+
+struct inode * find_inode( ino_t ) {
+  // the actual code for this will depend on how you implement this map
+  return 0;
+}
+
+my_DIR* opendir( char* fullpath ) {
+  return fhopendir( find_inode( fullpath ) );
+}
+
+// ===================== A crude C++ approach ====================
+
+class file {
+  public:
+    inode ino;
+};
+
+class regfile : file {
+  string content;
+};
+
+class openfile : regfile {
+  stringstream(content);
+};
+
+class directory : file {
+  public:
+    map<string,file> themap; // a balanced binary tree.
+};
+
+class my_dir { // C++ verion of DIR, i.e., an opened directory
+  directory d;
+  map<string,file>::iterator it; // readdir must post−increment it.
+  my_dir( directory d )
+    : d(d)
+  {
+    it = d.themap.begin();
+  }
+};
+
+template< typename T1, typename T2>
+string pickle(map<T1,T2> m) {
+  typename map<T1,T2>::iterator it;
+  string s;
+  stringstream ss(s);
+  for ( it = m.begin(); it != m.end(); ++it ) {
+    // This requires some kind of separation/terminaton symbol at the end of each
+    ss << it.first;
+    ss << it.second;
+  }
+}
