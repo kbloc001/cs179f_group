@@ -219,3 +219,56 @@ int my_lremovexattr( const char *path, const char *name ) {
 
 #define my_DIR_PTR (uniptr_t)
 
+// // called at line #659 of bbfs.c
+// my_DIR* my_opendir( const char* fpath ) {
+// return err;
+// }
+
+// // called at line #707 of bbfs.c
+// int my_readdir( my_DIR* dp ) {
+// return err;
+// }
+
+// // called at line #742 of bbfs.c
+// int my_closedir( my_DIR* dp ) {
+// return err;
+// }
+
+// called at line #826 of bbfs.c
+int my_access( const char *fpath, int mask ) {
+  return err;
+}
+
+// called at line #856 of bbfs.c
+int my_creat( const char *fpath, mode_t mode ) {
+  return err;
+}
+
+// called at line #887 of bbfs.c
+int my_ftruncate( ino_t fh, off_t offset ) {
+  return err;
+}
+
+// called at line #921 of bbfs.c
+// for details see: http://manpages.ubuntu.com/manpages/hardy/man2/stat.2.html
+int my_fstat( ino_t fh, struct stat* statbuf ) {
+  return err;
+}
+
+// called at line #1015 of bbfs.c
+char* my_realpath( const char* path, char* resolved_path ) {
+  assert( resolved_path != NULL );
+  return 0;
+}
+// ======================= Helper functions =======================
+
+// In the code below opendir is defined in terms of find_inode,
+// which is defined in terms of lookup,
+// which is defined in terms of opendir and readdir.
+// The header file takes care of that circularity.
+typedef char block[4096];
+285 block* blocks[15];
+286
+287 my_DIR* fhopendir( ino_t fh ) {
+288 // if ( fh is not the handle of a directory ) return not−a−directory error;
+289 r
