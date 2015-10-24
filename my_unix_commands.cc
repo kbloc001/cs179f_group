@@ -43,18 +43,26 @@ spilt( const string s, const string pat) {
   }
 }
 
-//--------------------------------------------------
-struct inode {
-// we need to add the rest of what we need.
-off_t i_size;
+class my_DIR {
+  public:
+    dirent* base;
+    dirent* offset;
+    ino_t fh;
+    dirent* max_offset;
+    my_DIR( ino_t x )
+      : fh(x), max_offset((dirent*)ilist[fh].i_size)
+    {}
 };
 
-39
-40
+int ok = 0;
+int err = -1;
 
-struct inode ilist[300];
+int my_lstat(const char* path, struct stat *statbuf){
+  // ino_t fh = find_inode(path);
+  //
+}
 
-// a dummy ilist.
+
 
 // called at line #241 of bbfs.c
 int my_symlink(const char *path, const char *link) {
