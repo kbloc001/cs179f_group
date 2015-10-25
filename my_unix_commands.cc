@@ -99,6 +99,7 @@ int my_rmdir( const char *path ){
 
 // called at line #241 of bbfs.c
 int my_symlink(const char *path, const char *link) {
+//Testing how smart git is
 return err;
 }
 
