@@ -68,7 +68,7 @@ spilt( const string s, const string pat) {
     int j = (t == string::npos) ? s.size() : t;
     string c = s.substr(i,j-i);
     v.push_back(c);
-    i = k+pat.size();
+    i = j+pat.size();
     if ( t == string::npos ) return v;
   }
 }
