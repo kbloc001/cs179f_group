@@ -3,7 +3,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <fuse.h>
+//#include <fuse.h>
 #include <libgen.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -351,9 +351,9 @@ my_DIR* fhopendir( ino_t fh ) {
 }
 
 dirent* readdir( my_DIR* dirp ) {
-  off_t tmp = (dirp−>offset)−>d_reclen;
-  dirp−>offset += tmp;
-  return ( dirp−>offset < dirp−>max_offset) ? dirp−>offset : 0 ;
+  off_t tmp = (dirp->offset)->d_reclen;
+  dirp->offset += tmp;
+  return ( dirp->offset < dirp->max_offset) ? dirp->offset : 0 ;
 }
 
 int closedir( my_DIR* dirp ) {
@@ -368,15 +368,15 @@ ino_t lookup( string name, ino_t fh ) {
   my_DIR* dirp = fhopendir( fh ); // fhopendir checks if fh is handle of a dir.
   if ( ! dirp ) return err; // cannot_open_error
   while ( dirent* dp = readdir(dirp) ) {
-    string s = dp−>d_name; // converts C string to C++ string
+    string s = dp->d_name; // converts C string to C++ string
     if ( s == name ) {
       closedir(dirp);
-      if ( dp−>d_type != DT_REG && dp−>d_type != DT_DIR ) {
+      if ( dp->d_type != DT_REG && dp->d_type != DT_DIR ) {
         return err;   // wrong−file−type error
                       // later we may add more types
       } 
       else {
-        return dp−>d_fileno;
+        return dp->d_fileno;
       }
     }
   }
