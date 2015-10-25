@@ -253,6 +253,53 @@ int my_ftruncate( ino_t fh, off_t offset ) {
 // called at line #921 of bbfs.c
 // for details see: http://manpages.ubuntu.com/manpages/hardy/man2/stat.2.html
 int my_fstat( ino_t fh, struct stat* statbuf ) {
+	/*
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * */
   return err;
 }
 
@@ -284,7 +331,7 @@ dirent* readdir( my_DIR* dirp ) {
 }
 
 int closedir( my_DIR* dirp ) {
-  //jips comment
+	// Guaranteed error
   cout << "closing dir" << endl;
   delete dirp;
 }
