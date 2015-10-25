@@ -284,6 +284,7 @@ dirent* readdir( my_DIR* dirp ) {
 }
 
 int closedir( my_DIR* dirp ) {
+  //jips comment
   cout << "closing dir" << endl;
   delete dirp;
 }
@@ -343,8 +344,7 @@ class regfile : file {
 
 class openfile : regfile {
   stringstream(content);
-};
-
+}
 class directory : file {
   public:
     map<string,file> themap; // a balanced binary tree.
