@@ -160,7 +160,7 @@ return err;
 }
 
 // called at line #376 of bbfs.c. Returns file handle not fd
-int open( const char *path, int flags ) {
+int my_open( const char *pathname, int flags, mode_t mode) {
   // Write a function called "lookup" that takes a name and the handle
   // of a directory and returns the handle part of the entry having that
   // name.
