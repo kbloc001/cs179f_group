@@ -59,7 +59,7 @@ struct inode ilist[300];
 
 inline // a simple utility for splitting strings at a find-pattern
 vector <string>
-spilt( const string s, const string pat) {
+split( const string s, const string pat) {
   string c;
   vector<string> v;
   int i = 0;
@@ -358,7 +358,7 @@ dirent* readdir( my_DIR* dirp ) {
 
 int closedir( my_DIR* dirp ) {
 	// Guaranteed error
-  cout << "closing dir" << endl;
+  //cout << "closing dir" << endl;
   delete dirp;
 }
 
@@ -417,7 +417,8 @@ class regfile : file {
 
 class openfile : regfile {
   stringstream(content);
-}
+};
+
 class directory : file {
   public:
     map<string,file> themap; // a balanced binary tree.
