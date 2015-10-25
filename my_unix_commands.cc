@@ -284,6 +284,7 @@ dirent* readdir( my_DIR* dirp ) {
 }
 
 int closedir( my_DIR* dirp ) {
+	// Guaranteed error
   cout << "closing dir" << endl;
   delete dirp;
 }
