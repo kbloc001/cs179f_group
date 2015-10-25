@@ -159,7 +159,7 @@ int my_utime(const char *path, struct utimbuf *ubuf) {
 return err;
 }
 
-// called at line #376 of bbfs.c. Returns file handle not fd
+// called at line #153 of bbfs.c. Returns file handle not fd
 int my_open( const char *pathname, int flags, mode_t mode) {
   // Write a function called "lookup" that takes a name and the handle
   // of a directory and returns the handle part of the entry having that
@@ -174,6 +174,10 @@ int my_open( const char *pathname, int flags, mode_t mode) {
   return err;
 }
 
+// called at line #387 of bbfs.c
+int my_open2( const char *pathname, int flags) {
+	return err;
+}
 // called at line #411 of bbfs.c
 int my_pread( int fh, char *buf, size_t size, off_t offset ) {
   return err;

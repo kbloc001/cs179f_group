@@ -384,8 +384,7 @@ int bb_open(const char *path, struct fuse_file_info *fi)
 	    path, fi);
     bb_fullpath(fpath, path);
     
-    //fd = open(fpath, fi->flags);
-    fd = my_open(fpath, fi->flags);
+    fd = my_open2(fpath, fi->flags);
     if (fd < 0)
 	retstat = bb_error("bb_open open");
     

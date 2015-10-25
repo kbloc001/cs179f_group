@@ -29,6 +29,8 @@ int my_truncate(const char *path, off_t length);
 
 int my_utime(const char *filename, const struct utimbuf *times);
 
+int my_open2(const char *pathname, int flags);
+
 int my_open(const char *pathname, int flags, mode_t mode);
 
 int my_pread(int fh, void *buf, size_t count, off_t offset);
