@@ -24,9 +24,35 @@
 #include <map>
 
 using namespace std;
+  /*
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   */
 
 struct inode {
   off_t i_size;
+  /*
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   * 
+   */
 };
 
 struct inode ilist[300];
