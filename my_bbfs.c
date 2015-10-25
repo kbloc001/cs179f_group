@@ -92,8 +92,8 @@ int bb_getattr(const char *path, struct stat *statbuf)
     if (retstat != 0)
 	retstat = bb_error("bb_getattr lstat");
     
-    log_stat(statbuf);
-    
+    //log_stat(statbuf);
+    my_lstat(statbuf);
     return retstat;
 }
 
@@ -118,7 +118,8 @@ int bb_readlink(const char *path, char *link, size_t size)
 	  path, link, size);
     bb_fullpath(fpath, path);
     
-    retstat = readlink(fpath, link, size - 1);
+    //retstat = readlink(fpath, link, size - 1);
+    restat = my_readlink(fpath, link, size - 1);
     if (retstat < 0)
 	retstat = bb_error("bb_readlink readlink");
     else  {
@@ -146,12 +147,13 @@ int bb_mknod(const char *path, mode_t mode, dev_t dev)
     
     // On Linux this could just be 'mknod(path, mode, rdev)' but this
     //  is more portable
-    if (S_ISREG(mode)) {
-        retstat = open(fpath, O_CREAT | O_EXCL | O_WRONLY, mode);
+    if (S_ISREG(mode)) {\
+        //retstat = open(fpath, O_CREAT | O_EXCL | O_WRONLY, mode);
+		retstat = my_open(fpath, O_CREAT | O_EXCL | O_WRONLY, mode);
 	if (retstat < 0)
 	    retstat = bb_error("bb_mknod open");
         else {
-            retstat = close(retstat);
+            retstat = my_close(retstat);
 	    if (retstat < 0)
 		retstat = bb_error("bb_mknod close");
 	}
@@ -161,7 +163,8 @@ int bb_mknod(const char *path, mode_t mode, dev_t dev)
 	    if (retstat < 0)
 		retstat = bb_error("bb_mknod mkfifo");
 	} else {
-	    retstat = mknod(fpath, mode, dev);
+	    //retstat = mknod(fpath, mode, dev);
+	    restat = my_mknod(fpath, mode, dev);    
 	    if (retstat < 0)
 		retstat = bb_error("bb_mknod mknod");
 	}
@@ -179,7 +182,8 @@ int bb_mkdir(const char *path, mode_t mode)
 	    path, mode);
     bb_fullpath(fpath, path);
     
-    retstat = mkdir(fpath, mode);
+    //retstat = mkdir(fpath, mode);
+    restat = my_mkdir(fpath, mode);
     if (retstat < 0)
 	retstat = bb_error("bb_mkdir mkdir");
     
@@ -196,8 +200,9 @@ int bb_unlink(const char *path)
 	    path);
     bb_fullpath(fpath, path);
     
-    retstat = unlink(fpath);
-    if (retstat < 0)
+    //retstat = unlink(fpath);
+    retstat = my_unlink(fpath);
+	if (retstat < 0)
 	retstat = bb_error("bb_unlink unlink");
     
     return retstat;
@@ -213,7 +218,8 @@ int bb_rmdir(const char *path)
 	    path);
     bb_fullpath(fpath, path);
     
-    retstat = rmdir(fpath);
+    //retstat = rmdir(fpath);
+	restat = my_rmdir(fpath);
     if (retstat < 0)
 	retstat = bb_error("bb_rmdir rmdir");
     
@@ -234,8 +240,9 @@ int bb_symlink(const char *path, const char *link)
 	    path, link);
     bb_fullpath(flink, link);
     
-    retstat = symlink(path, flink);
-    if (retstat < 0)
+    //retstat = symlink(path, flink);
+    retstat = my_symlink(path, flink);
+	if (retstat < 0)
 	retstat = bb_error("bb_symlink symlink");
     
     return retstat;
@@ -254,8 +261,9 @@ int bb_rename(const char *path, const char *newpath)
     bb_fullpath(fpath, path);
     bb_fullpath(fnewpath, newpath);
     
-    retstat = rename(fpath, fnewpath);
-    if (retstat < 0)
+    //retstat = rename(fpath, fnewpath);
+    retstat = my_rename(fpath, fnewpath);
+	if (retstat < 0)
 	retstat = bb_error("bb_rename rename");
     
     return retstat;
@@ -272,7 +280,9 @@ int bb_link(const char *path, const char *newpath)
     bb_fullpath(fpath, path);
     bb_fullpath(fnewpath, newpath);
     
-    retstat = link(fpath, fnewpath);
+    //retstat = link(fpath, fnewpath);
+	retstat = my_link(fpath, fnewpath);
+
     if (retstat < 0)
 	retstat = bb_error("bb_link link");
     
@@ -289,7 +299,8 @@ int bb_chmod(const char *path, mode_t mode)
 	    path, mode);
     bb_fullpath(fpath, path);
     
-    retstat = chmod(fpath, mode);
+    //retstat = chmod(fpath, mode);
+	retstat = my_chmod(fpath, mode);
     if (retstat < 0)
 	retstat = bb_error("bb_chmod chmod");
     
@@ -307,7 +318,8 @@ int bb_chown(const char *path, uid_t uid, gid_t gid)
 	    path, uid, gid);
     bb_fullpath(fpath, path);
     
-    retstat = chown(fpath, uid, gid);
+    //retstat = chown(fpath, uid, gid);
+	retstat = my_chown(fpath, uid, gid);
     if (retstat < 0)
 	retstat = bb_error("bb_chown chown");
     
@@ -324,7 +336,8 @@ int bb_truncate(const char *path, off_t newsize)
 	    path, newsize);
     bb_fullpath(fpath, path);
     
-    retstat = truncate(fpath, newsize);
+    //retstat = truncate(fpath, newsize);
+	retstat = my_truncate(fpath, newsize);
     if (retstat < 0)
 	bb_error("bb_truncate truncate");
     
@@ -342,8 +355,9 @@ int bb_utime(const char *path, struct utimbuf *ubuf)
 	    path, ubuf);
     bb_fullpath(fpath, path);
     
-    retstat = utime(fpath, ubuf);
-    if (retstat < 0)
+    //retstat = utime(fpath, ubuf);
+    retstat = my_utime(fpath, ubuf);
+	if (retstat < 0)
 	retstat = bb_error("bb_utime utime");
     
     return retstat;
@@ -369,7 +383,8 @@ int bb_open(const char *path, struct fuse_file_info *fi)
 	    path, fi);
     bb_fullpath(fpath, path);
     
-    fd = open(fpath, fi->flags);
+    //fd = open(fpath, fi->flags);
+    fd = my_open(fpath, fi->flags);
     if (fd < 0)
 	retstat = bb_error("bb_open open");
     
@@ -404,7 +419,8 @@ int bb_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
     // no need to get fpath on this one, since I work from fi->fh not the path
     log_fi(fi);
     
-    retstat = pread(fi->fh, buf, size, offset);
+    //retstat = pread(fi->fh, buf, size, offset);
+	retstat = my_pread(fi->fh, buf, size, offset);
     if (retstat < 0)
 	retstat = bb_error("bb_read read");
     
@@ -432,7 +448,8 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     // no need to get fpath on this one, since I work from fi->fh not the path
     log_fi(fi);
 	
-    retstat = pwrite(fi->fh, buf, size, offset);
+    //retstat = pwrite(fi->fh, buf, size, offset);
+	retstat = pwrite(fi->fh, buf, size, offset);
     if (retstat < 0)
 	retstat = bb_error("bb_write pwrite");
     
@@ -456,7 +473,7 @@ int bb_statfs(const char *path, struct statvfs *statv)
     bb_fullpath(fpath, path);
     
     // get stats for underlying filesystem
-    retstat = statvfs(fpath, statv);
+    retstat = my_statvfs(fpath, statv);
     if (retstat < 0)
 	retstat = bb_error("bb_statfs statvfs");
     
@@ -523,7 +540,7 @@ int bb_release(const char *path, struct fuse_file_info *fi)
 
     // We need to close the file.  Had we allocated any resources
     // (buffers etc) we'd need to free them here as well.
-    retstat = close(fi->fh);
+    retstat = my_close(fi->fh);
     
     return retstat;
 }
@@ -546,10 +563,10 @@ int bb_fsync(const char *path, int datasync, struct fuse_file_info *fi)
     // some unix-like systems (notably freebsd) don't have a datasync call
 #ifdef HAVE_FDATASYNC
     if (datasync)
-	retstat = fdatasync(fi->fh);
+	retstat = my_fdatasync(fi->fh);
     else
 #endif	
-	retstat = fsync(fi->fh);
+	retstat = my_fsync(fi->fh);
     
     if (retstat < 0)
 	bb_error("bb_fsync fsync");
@@ -568,7 +585,7 @@ int bb_setxattr(const char *path, const char *name, const char *value, size_t si
 	    path, name, value, size, flags);
     bb_fullpath(fpath, path);
     
-    retstat = lsetxattr(fpath, name, value, size, flags);
+    retstat = my_lsetxattr(fpath, name, value, size, flags);
     if (retstat < 0)
 	retstat = bb_error("bb_setxattr lsetxattr");
     
@@ -585,7 +602,7 @@ int bb_getxattr(const char *path, const char *name, char *value, size_t size)
 	    path, name, value, size);
     bb_fullpath(fpath, path);
     
-    retstat = lgetxattr(fpath, name, value, size);
+    retstat = my_lgetxattr(fpath, name, value, size);
     if (retstat < 0)
 	retstat = bb_error("bb_getxattr lgetxattr");
     else
@@ -606,7 +623,7 @@ int bb_listxattr(const char *path, char *list, size_t size)
 	    );
     bb_fullpath(fpath, path);
     
-    retstat = llistxattr(fpath, list, size);
+    retstat = my_llistxattr(fpath, list, size);
     if (retstat < 0)
 	retstat = bb_error("bb_listxattr llistxattr");
     
@@ -627,7 +644,7 @@ int bb_removexattr(const char *path, const char *name)
 	    path, name);
     bb_fullpath(fpath, path);
     
-    retstat = lremovexattr(fpath, name);
+    retstat = my_lremovexattr(fpath, name);
     if (retstat < 0)
 	retstat = bb_error("bb_removexattr lrmovexattr");
     
@@ -652,7 +669,7 @@ int bb_opendir(const char *path, struct fuse_file_info *fi)
 	  path, fi);
     bb_fullpath(fpath, path);
     
-    dp = opendir(fpath);
+    dp = my_opendir(fpath);
     if (dp == NULL)
 	retstat = bb_error("bb_opendir opendir");
     
@@ -700,7 +717,7 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     // first call to the system readdir() returns NULL I've got an
     // error; near as I can tell, that's the only condition under
     // which I can get an error from readdir()
-    de = readdir(dp);
+    de = my_readdir(dp);
     if (de == 0) {
 	retstat = bb_error("bb_readdir readdir");
 	return retstat;
@@ -716,7 +733,7 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
 	    log_msg("    ERROR bb_readdir filler:  buffer full");
 	    return -ENOMEM;
 	}
-    } while ((de = readdir(dp)) != NULL);
+    } while ((de = my_readdir(dp)) != NULL);
     
     log_fi(fi);
     
@@ -735,7 +752,7 @@ int bb_releasedir(const char *path, struct fuse_file_info *fi)
 	    path, fi);
     log_fi(fi);
     
-    closedir((DIR *) (uintptr_t) fi->fh);
+    my_closedir((DIR *) (uintptr_t) fi->fh);
     
     return retstat;
 }
@@ -819,7 +836,7 @@ int bb_access(const char *path, int mask)
 	    path, mask);
     bb_fullpath(fpath, path);
     
-    retstat = access(fpath, mask);
+    retstat = my_access(fpath, mask);
     
     if (retstat < 0)
 	retstat = bb_error("bb_access access");
@@ -849,7 +866,7 @@ int bb_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 	    path, mode, fi);
     bb_fullpath(fpath, path);
     
-    fd = creat(fpath, mode);
+    fd = my_creat(fpath, mode);
     if (fd < 0)
 	retstat = bb_error("bb_create creat");
     
@@ -880,7 +897,7 @@ int bb_ftruncate(const char *path, off_t offset, struct fuse_file_info *fi)
 	    path, offset, fi);
     log_fi(fi);
     
-    retstat = ftruncate(fi->fh, offset);
+    retstat = my_ftruncate(fi->fh, offset);
     if (retstat < 0)
 	retstat = bb_error("bb_ftruncate ftruncate");
     
@@ -914,12 +931,12 @@ int bb_fgetattr(const char *path, struct stat *statbuf, struct fuse_file_info *f
     if (!strcmp(path, "/"))
 	return bb_getattr(path, statbuf);
     
-    retstat = fstat(fi->fh, statbuf);
+    retstat = my_fstat(fi->fh, statbuf);
     if (retstat < 0)
 	retstat = bb_error("bb_fgetattr fstat");
     
-    log_stat(statbuf);
-    
+    //log_stat(statbuf);
+     my_lstat(statbuf);
     return retstat;
 }
 
@@ -1008,7 +1025,8 @@ int main(int argc, char *argv[])
 
     // Pull the rootdir out of the argument list and save it in my
     // internal data
-    bb_data->rootdir = realpath(argv[argc-2], NULL);
+    
+    bb_data->rootdir = my_realpath(argv[argc-2], NULL);
     argv[argc-2] = argv[argc-1];
     argv[argc-1] = NULL;
     argc--;
