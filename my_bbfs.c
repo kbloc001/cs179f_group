@@ -34,13 +34,15 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+
 
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
 #endif
 
 #include "log.h"
-
+#include "my_unix_commands.h"
 // Report errors to logfile and give -errno to caller
 static int bb_error(char *str)
 {
@@ -88,12 +90,11 @@ int bb_getattr(const char *path, struct stat *statbuf)
 	  path, statbuf);
     bb_fullpath(fpath, path);
     
-    retstat = lstat(fpath, statbuf);
+    retstat = my_lstat(fpath, statbuf);
     if (retstat != 0)
 	retstat = bb_error("bb_getattr lstat");
     
-    //log_stat(statbuf);
-    my_lstat(statbuf);
+    log_stat(statbuf);
     return retstat;
 }
 
@@ -119,7 +120,7 @@ int bb_readlink(const char *path, char *link, size_t size)
     bb_fullpath(fpath, path);
     
     //retstat = readlink(fpath, link, size - 1);
-    restat = my_readlink(fpath, link, size - 1);
+    retstat = my_readlink(fpath, link, size - 1);
     if (retstat < 0)
 	retstat = bb_error("bb_readlink readlink");
     else  {
@@ -164,7 +165,7 @@ int bb_mknod(const char *path, mode_t mode, dev_t dev)
 		retstat = bb_error("bb_mknod mkfifo");
 	} else {
 	    //retstat = mknod(fpath, mode, dev);
-	    restat = my_mknod(fpath, mode, dev);    
+	    retstat = my_mknod(fpath, mode, dev);    
 	    if (retstat < 0)
 		retstat = bb_error("bb_mknod mknod");
 	}
@@ -183,7 +184,7 @@ int bb_mkdir(const char *path, mode_t mode)
     bb_fullpath(fpath, path);
     
     //retstat = mkdir(fpath, mode);
-    restat = my_mkdir(fpath, mode);
+    retstat = my_mkdir(fpath, mode);
     if (retstat < 0)
 	retstat = bb_error("bb_mkdir mkdir");
     
@@ -219,7 +220,7 @@ int bb_rmdir(const char *path)
     bb_fullpath(fpath, path);
     
     //retstat = rmdir(fpath);
-	restat = my_rmdir(fpath);
+	retstat = my_rmdir(fpath);
     if (retstat < 0)
 	retstat = bb_error("bb_rmdir rmdir");
     
@@ -935,8 +936,8 @@ int bb_fgetattr(const char *path, struct stat *statbuf, struct fuse_file_info *f
     if (retstat < 0)
 	retstat = bb_error("bb_fgetattr fstat");
     
-    //log_stat(statbuf);
-     my_lstat(statbuf);
+    log_stat(statbuf);
+ 
     return retstat;
 }
 
