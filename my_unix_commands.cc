@@ -3,7 +3,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-//#include <fuse.h>
+#include <fuse.h>
 #include <libgen.h>
 #include <limits.h>
 #include <stdlib.h>

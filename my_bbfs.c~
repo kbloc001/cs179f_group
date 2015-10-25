@@ -43,6 +43,51 @@
 
 #include "log.h"
 #include "my_unix_commands.h"
+
+struct fuse_operations bb_oper = {
+  .getattr = bb_getattr,
+  .readlink = bb_readlink,
+  // no .getdir -- that's deprecated
+  .getdir = NULL,
+  .mknod = bb_mknod,
+  .mkdir = bb_mkdir,
+  .unlink = bb_unlink,
+  .rmdir = bb_rmdir,
+  .symlink = bb_symlink,
+  .rename = bb_rename,
+  .link = bb_link,
+  .chmod = bb_chmod,
+  .chown = bb_chown,
+  .truncate = bb_truncate,
+  .utime = bb_utime,
+  .open = bb_open,
+  .read = bb_read,
+  .write = bb_write,
+  /** Just a placeholder, don't set */ // huh???
+  .statfs = bb_statfs,
+  .flush = bb_flush,
+  .release = bb_release,
+  .fsync = bb_fsync,
+  
+#ifdef HAVE_SYS_XATTR_H
+  .setxattr = bb_setxattr,
+  .getxattr = bb_getxattr,
+  .listxattr = bb_listxattr,
+  .removexattr = bb_removexattr,
+#endif
+  
+  .opendir = bb_opendir,
+  .readdir = bb_readdir,
+  .releasedir = bb_releasedir,
+  .fsyncdir = bb_fsyncdir,
+  .init = bb_init,
+  .destroy = bb_destroy,
+  .access = bb_access,
+  .create = bb_create,
+  .ftruncate = bb_ftruncate,
+  .fgetattr = bb_fgetattr
+};
+
 // Report errors to logfile and give -errno to caller
 static int bb_error(char *str)
 {
@@ -939,51 +984,6 @@ int bb_fgetattr(const char *path, struct stat *statbuf, struct fuse_file_info *f
  
     return retstat;
 }
-
-
-struct fuse_operations bb_oper = {
-  .getattr = bb_getattr,
-  .readlink = bb_readlink,
-  // no .getdir -- that's deprecated
-  .getdir = NULL,
-  .mknod = bb_mknod,
-  .mkdir = bb_mkdir,
-  .unlink = bb_unlink,
-  .rmdir = bb_rmdir,
-  .symlink = bb_symlink,
-  .rename = bb_rename,
-  .link = bb_link,
-  .chmod = bb_chmod,
-  .chown = bb_chown,
-  .truncate = bb_truncate,
-  .utime = bb_utime,
-  .open = bb_open,
-  .read = bb_read,
-  .write = bb_write,
-  /** Just a placeholder, don't set */ // huh???
-  .statfs = bb_statfs,
-  .flush = bb_flush,
-  .release = bb_release,
-  .fsync = bb_fsync,
-  
-#ifdef HAVE_SYS_XATTR_H
-  .setxattr = bb_setxattr,
-  .getxattr = bb_getxattr,
-  .listxattr = bb_listxattr,
-  .removexattr = bb_removexattr,
-#endif
-  
-  .opendir = bb_opendir,
-  .readdir = bb_readdir,
-  .releasedir = bb_releasedir,
-  .fsyncdir = bb_fsyncdir,
-  .init = bb_init,
-  .destroy = bb_destroy,
-  .access = bb_access,
-  .create = bb_create,
-  .ftruncate = bb_ftruncate,
-  .fgetattr = bb_fgetattr
-};
 
 void bb_usage()
 {
