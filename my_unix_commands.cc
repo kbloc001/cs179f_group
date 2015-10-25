@@ -283,6 +283,7 @@ dirent* readdir( my_DIR* dirp ) {
 }
 
 int closedir( my_DIR* dirp ) {
+  cout << "closing dir" << endl;
   delete dirp;
 }
 
