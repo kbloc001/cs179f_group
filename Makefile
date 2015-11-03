@@ -1,13 +1,20 @@
-all: a.out
+##
+CC = gcc
+CCP = g++
+OPT = -D_FILE_OFFSET_BITS=64
+PKG = `pkg-config fuse --cflags --libs`
 
-a.out: my_unix_commands.o  my_bbfs.o main.cpp
-	g++ -D_FILE_OFFSET_BITS=64 main.cpp my_bbfs.o my_unix_commands.o -o a.out
+myfs: bbfs.o log.o my_unix_commands.o
+	$(CC) -lstdc++ bbfs.o log.o my_unix_commands.o $(PKG) -o myfs
 
-my_bbfs.o: my_bbfs.c my_unix_commands.h
-	gcc -D_FILE_OFFSET_BITS=64 -c my_bbfs.c -o my_bbfs.o
+bbfs.o: bbfs.c params.h my_unix_commands.h
+	$(CC) $(OPT) -c bbfs.c
 
-my_unix_commands.o: my_unix_commands.cc my_unix_commands.h
-	g++ -D_FILE_OFFSET_BITS=64 -c my_unix_commands.cc -o my_unix_commands.o
+log.o: log.c log.h
+	$(CC) $(OPT) -c log.c 
+
+my_stubs.o: my_unix_commands.h my_unix_commands.cc
+	$(CCP) -c my_stubs.cc
 
 clean:
-	rm -rf *.o *.out 
+	rm myfs *.o

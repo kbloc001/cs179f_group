@@ -1,0 +1,48 @@
+priority #1
+open, pread, pwrite, creat
+
+priority #2
+opendir, closedir, readdir
+
+priority #3
+
+priority #4
+
+Files
+access - check real user's permissions for a file 
+open, creat - open and possibly create a file or device X
+truncate, ftruncate - truncate a file to a specified length 
+fstat - get file status (the file to be stat-ed is specified by the file descriptor fd)
+mknod - create a special or ordinary file  
+rename - change the name or location of a file
+chmod - change file mode bits 
+chown -  change file owner and group
+utime - change file last access and modification times  
+pread, pwrite - read from or write to a file descriptor at a given offset X
+close - close a file descriptor 
+
+Directories
+opendir - open a directory X
+readdir - read a directory X
+closedir - close a directory X
+mkdir - create a directory
+rmdir - delete a directory
+
+Links (low priority)
+lstat - get file status (if path is a symbolic link, then the link itself is stat-ed, not the file that it refers to)
+readlink - read value of a symbolic link 
+unlink - delete a name and possibly the file it refers to
+symlink - make a new name for a file 
+link - make a new name for a file
+
+Attributes
+
+lsetxattr - set an extended attribute value
+lgetxattr - retrieve an extended attribute value
+llistxattr - list extended attribute names
+lremoveattr - remove an extended attribute
+
+Other
+
+fdatasync, fsync - synchronize a file's in-core state w/ storage device
+statvfs - get file system statistics 

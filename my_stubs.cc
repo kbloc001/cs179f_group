@@ -1,6 +1,8 @@
 
+
 // Note: this code is a work-in-progress.  This version: 3:15PM PDT
-// 10/26/15.  
+// 10/19/14 It compiles, but I've not yet written my_bbfs.c with which
+// to link it.
 
 // The difference between the functions in my_stubs.cc and those of
 // the Unix system (say those in glibc) is that those in glibc have
@@ -40,6 +42,7 @@
 #include <sys/types.h>
 
 // Here we include
+//#include </Users/thp/Documents/courses/CS179F/fs.h>
 #include </usr/include/linux/fs.h>
 #include <sys/stat.h>  // this has our official definition of stat
 #include <dirent.h>    // this has our official definition of dirent
@@ -49,11 +52,9 @@
 #include <cassert>
 #include <sstream>
 #include <map>
-#include "my_unix_commands.h"
+#include "my_stubs.H"
 
 using namespace std;
-
-// MY_DIR is typedef'd in my_stubs.H
 
 // This definition of inode is from http://www.makelinux.net/books/lkd2/ch12lev1sec6.
 // I've commented out all fields whose types are not yet defined.
@@ -125,17 +126,26 @@ split(const string s, const string pat ) {
 }
 
 
+// class my_DIR {  // This is my version of DIR
+// public:
+//   dirent* base;  // not a pointer, rather an off_t
+//   dirent* offset;
+//   ino_t fh;
+//   dirent* max_offset;  // we need to initialize this.
+//   my_DIR( ino_t x )
+//     : fh(x), max_offset((dirent*)ilist[fh].i_size)
+//   {}
+// };  
+
+
 int ok = 0;
 int err = -1;
-
-
-ino_t find_inode( string fullpath ); // declaration of helper function
 
 // called at line #95 of bbfs.c
 // for details see: http://manpages.ubuntu.com/manpages/hardy/man2/stat.2.html
 int my_lstat( const char* path, struct stat *statbuf ) {
-  ino_t fh = find_inode(path);
-  // Now collect attributes from ilist[fh] and load them into struct stat.
+  // ino_t fh = find_inode(path);
+  // collect attributes from ilist[fh] and load them into struct stat.
   return err;  
 }  
 
@@ -216,12 +226,12 @@ int my_open( const char *path, int flags ) {
 
 // called at line #411 of bbfs.c  Note that our firt arg is an fh not an fd
 int my_pread( int fh, char *buf, size_t size, off_t offset ) {
-  return err;
+  return err;  
 }  
 
 // called at line #439 of bbfs.c  Note that our firt arg is an fh not an fd
-int my_pwrite( int fh, const char *buf, size_t size, off_t offset ) {
-  return err;
+int my_pwrite( int fh, char *buf, size_t size, off_t offset ) {
+  return err;  
 }  
 
 // called at line #463 of bbfs.c
@@ -230,8 +240,8 @@ int my_statvfs(const char *fpath, struct statvfs *statv) {
 }  
 
 // called at line #530 of bbfs.c
-int my_close( int fh ) {
-  return err;
+int my_close( ino_t fh ) {
+  return err;  
 }  
 
 // called at line #553 of bbfs.c
@@ -265,6 +275,43 @@ int my_lremovexattr( const char *path, const char *name ) {
 }  
 
 
+// In the next three functions, we need to create a my_DIR* from a file
+// handle, i.e., an (ino_t) fh.  So, how to do that?
+
+// It doesn't say this anywhere that I can find, but a my_DIR has to be
+// similar to an open file.  However, rather than creating a stream of
+// bytes (chars) from the file, it creates a stream of directory
+// entries.  The key difference is how much you increment the offset
+// counter each time you move to the next item.
+
+// Note that at line #742 of bbfs.c, Professor Pfeiffer converts a
+// file handle into a my_DIR via "(uintptr_t) fh."  But, his file handles
+// are indices of byte streams, while our are the addresses of inodes.
+
+// I recommend that we simply maintain the counter as an
+// directory-entry index and increment it by one each time.  Then
+// multiply it by the size of a directory entry to get the offset of
+// the directory entry that it refers to within the directory.  To get
+// the address of that directory entry, we simply add the address of
+// the corresponding block of the directory.
+
+// #define my_DIR_PTR (uniptr_t)
+
+// // called at line #659 of bbfs.c
+// my_DIR* my_opendir( const char* fpath ) {
+//   return err;  
+// }  
+
+// // called at lines #707 and #726 of bbfs.c
+// int my_readdir( my_DIR* dp ) {
+//   return err;  
+// }  
+
+// // called at line #742 of bbfs.c
+// int my_closedir( my_DIR* dp ) {  
+//   return err;  
+// }  
+
 // called at line #826 of bbfs.c
 int my_access( const char *fpath, int mask ) {
   return err;  
@@ -286,6 +333,12 @@ int my_fstat( ino_t fh, struct stat* statbuf ) {
   return err;  
 }  
 
+// called at line #1015 of bbfs.c
+char* my_realpath( const char* path, char* resolved_path ) {
+  assert( resolved_path != NULL );
+  return 0;  
+}  
+
 
 // Here are my helper functions ==================================
 
@@ -298,39 +351,21 @@ typedef char block[4096];
 
 block* blocks[15];
 
-
-// In the next three functions, we need to create a my_DIR* from a file
-// handle, i.e., an (ino_t) fh.  So, how to do that?
-
-// It doesn't say this anywhere that I can find, but a my_DIR has to be
-// similar to an open file.  However, rather than creating a stream of
-// bytes (chars) from the file, it creates a stream of directory
-// entries.  The key difference is how much you increment the offset
-// counter each time you move to the next item.
-
-// Note that at line #742 of bbfs.c, Professor Pfeiffer converts a
-// file handle into a DIR* via "(uintptr_t) fh."  But, his file handles
-// are indices of byte streams, while our are the addresses of inodes.
-
-
-MY_DIR* fhopendir( ino_t fh ) {  // not exported
+my_DIR* fhopendir( ino_t fh ) {
   // if ( fh is not the handle of a directory ) return not-a-directory error;
-  MY_DIR * tmp = new MY_DIR;
+  my_DIR * tmp = new my_DIR;
   tmp->fh = fh;
-  return tmp;
 }
 
 
-// called at lines #707 and #726 of bbfs.c
-dirent* my_readdir( MY_DIR* dirp ) {  
+dirent* readdir( my_DIR* dirp ) {  
   off_t tmp = (dirp->offset)->d_reclen;
   dirp->offset += tmp;
   return ( dirp->offset < dirp->max_offset) ? dirp->offset : 0 ;
 }
 
 
-// called at line #742 of bbfs.c
-int my_closedir( MY_DIR* dirp ) {
+int closedir( my_DIR* dirp ) {
   delete dirp;  
 }
 
@@ -338,12 +373,12 @@ int my_closedir( MY_DIR* dirp ) {
 ino_t lookup( string name, ino_t fh ) {
   // finds and returns ino_t of file whose name is name in directory fh.
   // This function will be used by open() and opendir().
-  MY_DIR* dirp = fhopendir( fh ); // fhopendir checks if fh is handle of a dir.
-  if ( ! dirp ) return err;
-  while ( dirent* dp = my_readdir(dirp) ) {  
+  my_DIR* dirp = fhopendir( fh ); // fhopendir checks if fh is handle of a dir.
+  if ( ! dirp ) return err;       // cannot_open_error
+  while ( dirent* dp = readdir(dirp) ) {  
     string s = dp->d_name;        // converts C string to C++ string
     if ( s == name ) {
-      my_closedir(dirp);
+      closedir(dirp);
       if ( dp->d_type != DT_REG && dp->d_type != DT_DIR ) {
 	return err;               // wrong-file-type error
                                   // later we may add more types
@@ -352,7 +387,7 @@ ino_t lookup( string name, ino_t fh ) {
       }
     } 
   }
-  my_closedir(dirp);         // close MY_DIR asap, to reset internal data
+  closedir(dirp);         // close my_DIR asap, to reset internal data
   return err;  // name-not-found
 }  
 
@@ -366,18 +401,14 @@ ino_t find_inode( string fullpath ) {
   } 
 } 
 
-
 struct inode * find_inode( ino_t ) {
   // the actual code for this will depend on how you implement this map
   return 0;
 }  
 
-
-// called at line #659 of bbfs.c
-MY_DIR * my_opendir( char fullpath[PATH_MAX] ) {
-  return fhopendir( find_inode( fullpath ) ); // checks if result is a dir.
+my_DIR* opendir( char* fullpath ) {
+  return fhopendir( find_inode( fullpath ) );
 }
-
 
 // ===================== a crude c++ approach ======================
 
@@ -398,6 +429,16 @@ class directory : file {
 public:
   map<string,file> themap;  // a balanced binary tree.
 };  
+
+class my_dir { // C++ verion of DIR, i.e., an opened directory  
+  directory d;  
+  map<string,file>::iterator it; // readdir must post-increment it.
+  my_dir( directory d )
+    : d(d)
+  {
+    it = d.themap.begin();
+  }
+};
 
 
 template< typename T1, typename T2>

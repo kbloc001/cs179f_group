@@ -43,7 +43,7 @@
 #endif
 
 #include "log.h"
-#include "my_unix_commands.h"    /* added (thp) */
+#include "my_stubs.H"    /* added (thp) */
 
 // Report errors to logfile and give -errno to caller
 static int bb_error(char *str)
