@@ -438,7 +438,19 @@ int my_pread( int fh, char *buf, size_t size, off_t offset ) {
 
 // called at line #439 of bbfs.c  Note that our firt arg is an fh not an fd
 int my_pwrite( int fh, const char *buf, size_t size, off_t offset ) {
-  return an_err;
+  if(offset < 0 || ilist.entry[fh].data.size() < offset){return an_err;}
+  if(offset == ilist.entry[fh].data.size() -1){return 0;}
+  
+  int i = 0;
+  for(i = 0; i < strlen(buf); i++){
+    if(ilist.entry[fh].data[offset+i] == '\0'){
+      cout << "End of fh#" << fh << "reached, write complete" << endl;
+    }
+    
+    ilist.entry[fh].data[i+offset] = buf[i];
+  }
+  
+  return i;
 }  
 
 // called at line #463 of bbfs.c
@@ -1150,6 +1162,27 @@ int main(int argc, char* argv[] ) {
     else if (op == "lslr"  ) // executes visit()
     {
       visit(file);
+    }
+    else if (op == "write")
+    {
+      int fh = my_open(file.c_str(), O_WRONLY);
+      
+      size_t num_bytes = 0;
+      off_t offset = 0;
+      string my_str;
+
+      cout << "Enter string to write: ";
+        cin.ignore();
+        getline(cin, my_str);
+        const char * buf = my_str.c_str();
+        num_bytes = strlen(buf);     
+       
+        cout << "Enter offset: ";
+        (myin.good()? myin : cin) >> dec >> offset;
+        
+        int status = my_pwrite(fh, buf, num_bytes, offset);
+        cout << endl << "Number of bytes written: " << status << endl;
+      
     }
     else if (op == "read") 
     {
