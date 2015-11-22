@@ -265,7 +265,9 @@ int my_mknod( const char *path, mode_t mode, dev_t dev ) {
     df.the_dirent.d_ino  = parent_ino;  // needs to be adjusted for root directory
     ilist.entry[the_ino].dentries.push_back(df);
   }
-
+  else if ( S_ISREG(mode) ) {
+    ilist.entry[the_ino].data = "[insert text here]"; // ???
+  }
   return ok;
 
 }  
@@ -387,14 +389,21 @@ int my_open( const char *path, int flags ) {
   // corresponding directory entry, which has type struct dirent.
   // Return its d_fileno, unless there's an error and then return -1.
 
-  // FINISH THIS
-  // static filecount = 0;
-  // ino_t fh = find_ino(path);  // 
-  // if ( fh >= 0 && ) {
-  //   return fh;
-  // } else if ( flags & CREAT ) {
-  //   // create a new inode with ino_t filecount++;
-  // }
+  //static filecount = 0;
+
+  ino_t fh = find_ino(path);
+  if ( fh >= 0 ) {
+    cout << "file opened, fh = " << fh << endl;
+    return fh;
+  } 
+
+  else if ( flags & O_CREAT ) {
+    mode_t mode = 0644;
+    my_creat( path, mode );
+    fh = find_ino(path);
+    cout << "file created & opened, fh = " << fh << endl;
+    return fh;
+  }
 
 }  
 
@@ -415,6 +424,7 @@ int my_statvfs(const char *fpath, struct statvfs *statv) {
 
 // called at line #530 of bbfs.c
 int my_close( int fh ) {
+  
   return an_err;
 }  
 
@@ -457,7 +467,9 @@ int my_access( const char *fpath, int mask ) {
 // called at line #856 of bbfs.c
 int my_creat( const char *fpath, mode_t mode ) {
   // we can create a file by using the right flags to open
-  return an_err;  
+  // ADD: if file is already exists, check flags for append
+  cout << "file created: " << fpath << endl;
+  return my_mknod(fpath, (S_IFREG | mode), 100 );
 }  
 
 // called at line #887 of bbfs.c
@@ -1073,7 +1085,21 @@ int main(int argc, char* argv[] ) {
       break;
     } else if (op == "lslr"  ) { // executes visit()
       visit(file);
-    } else {
+    }
+      else if (op == "creat") {
+      cout << "Specify file permissions in octal: ";
+      mode_t mode; 
+      (myin.good()? myin : cin) >> oct >> mode;
+      record << oct << mode << endl;
+
+      my_creat( file.c_str(), mode );
+
+      } 
+      else if (op == "open"){
+      my_open( file.c_str(), O_RDONLY); // O_RDONLY for testing, should be changed depending on users permissions
+
+      }
+    else {
       cout << "Correct usage is: op pathname,\n"; 
       cout << "where \"op\" is one of the following:\n";
       cout << "help, play, save, mkdir, show, break, lslr, exit.\n";
