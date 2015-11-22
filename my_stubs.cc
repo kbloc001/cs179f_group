@@ -1114,15 +1114,23 @@ int main(int argc, char* argv[] ) {
     }
       else if (op == "read") {
 	int fh = my_open(file.c_str(), O_RDONLY);
-	int num_bytes;
-	int offset;
+        size_t num_bytes = 0;
+        off_t offset = 0;
+	//int num_bytes;
+	//int offset;
+	
 	cout << "Enter number of bytes to read: ";
-	cin >> num_bytes;
+        //getline(cin, num_bytes);
+	//cin >> num_bytes;
+	(myin.good()? myin : cin) >> dec >>  num_bytes;
 	cout << "Enter offset: " ;
-	cin >> offset;
+        (myin.good()? myin : cin) >> dec >> offset;
+	//cin >> offset;
+	//getline(cin, offset);
 	char * buf;
 	//remember to delete at some point
-	buf = new char[num_bytes+1]();	
+	buf = new char[num_bytes]();
+        cout << "num_bytes: " << num_bytes << "offset: " << offset << endl;	
 	int status = my_pread(fh, buf, num_bytes, offset);
 	cout << endl << "Number of bytes read " << status << endl;
 	cout << buf << endl;
