@@ -409,7 +409,31 @@ int my_open( const char *path, int flags ) {
 
 // called at line #411 of bbfs.c  Note that our firt arg is an fh not an fd
 int my_pread( int fh, char *buf, size_t size, off_t offset ) {
-  return an_err;
+	//cout << "ilist.entry[fh].data.size() = " << ilist.entry[fh].data.size() << endl;
+	
+	if(offset < 0 || ilist.entry[fh].data.size() < offset)
+	{
+		return an_err;
+	}	
+	if(offset == ilist.entry[fh].data.size() - 1)
+	{
+		return 0;
+	}
+	
+	//buf = new char[size + 1];
+	int i;	
+	for(i = 0; i < size; i++)
+	{
+		if(ilist.entry[fh].data[offset + i] == '\0')
+		{
+		  cout << "data[offset+i]: " << ilist.entry[fh].data[offset + i] << endl;
+			break;
+		}
+		buf[i] = ilist.entry[fh].data[offset + i];
+                //cout << buf[i] << " ";
+	}
+	//buf[i + 1] = '\0';
+	return i;
 }  
 
 // called at line #439 of bbfs.c  Note that our firt arg is an fh not an fd
@@ -1080,13 +1104,31 @@ int main(int argc, char* argv[] ) {
       myfile.open(file.c_str());
       myfile << record.str();
       myfile.close();
+      //check if buf has anything
+	// if it does delete it
       return 0;
     } else if (op == "break"  ) { // executes the rest of main()
       break;
     } else if (op == "lslr"  ) { // executes visit()
       visit(file);
     }
-      else if (op == "creat") {
+      else if (op == "read") {
+	int fh = my_open(file.c_str(), O_RDONLY);
+	int num_bytes;
+	int offset;
+	cout << "Enter number of bytes to read: ";
+	cin >> num_bytes;
+	cout << "Enter offset: " ;
+	cin >> offset;
+	char * buf;
+	//remember to delete at some point
+	buf = new char[num_bytes+1]();	
+	int status = my_pread(fh, buf, num_bytes, offset);
+	cout << endl << "Number of bytes read " << status << endl;
+	cout << buf << endl;
+	
+    }
+      else if (op == "creat" || op == "create") {
       cout << "Specify file permissions in octal: ";
       mode_t mode; 
       (myin.good()? myin : cin) >> oct >> mode;
