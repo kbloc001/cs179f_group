@@ -1,7 +1,7 @@
 all: a.out
 
 a.out: my_stubs.cc
-	reset
+	#reset
 	g++ my_stubs.cc
 	
 clean:
