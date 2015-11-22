@@ -1,22 +1,28 @@
 // my_stubs.H
 
-// These are the prototypes of the functions defined in my_stubs.cc, plus
-// the definition of the struct my_DIR.  They are needed to compile the
-// version of bbfs.c that is in this directory
+// These are the prototypes of the functions defined in my_stubs.cc,
+// plus the definition of the struct my_DIR and the macro MY_DIR,
+// which is needed to compile our modified version of bbfs.c.
+
+// Note tha all of our functions have int as their return values, with
+// the exceptions of my_opendir which returns a pointer to a MY_DIR,
+// and readdir, which returns an pointer to a dirent.  the functions
+// my_lstat() and my_fstat(), return struct stat by pointer reference.
+// similarly my_utime fills in a struct time buffer that is passed by
+// pointer reference.
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct my_DIR {  // This is my version of DIR
-  struct dirent * base;  // not a pointer, rather an off_t
-  struct dirent * offset;
+
+typedef struct mydir {               // This is my version of DIR
   ino_t fh;
-  struct dirent * max_offset;  // we need to initialize this.
-};  
+  int index;                          // should initially be zero
+} MY_DIR;  
 
-#define MY_DIR  struct my_DIR
-
+ 
+// called at line #95 of bbfs.c
 int my_lstat( const char* path, struct stat *statbuf );
 
 // called at line #125 of bbfs.c
@@ -58,19 +64,18 @@ int my_utime(const char *path, struct utimbuf *ubuf);
 // called at line #376 of bbfs.c.  Returns file handle not a file descriptor
 int my_open( const char *path, int flags ); 
 
-
 // called at line #411 of bbfs.c  Note that our firt arg is an fh not an fd
 int my_pread( int fh, char *buf, size_t size, off_t offset );
 
 // called at line #439 of bbfs.c  Note that our firt arg is an fh not an fd
 int my_pwrite( int fh, const char *buf, size_t size, off_t offset );
-//int my_pwrite( int fh, char *buf, size_t size, off_t offset );
+// int my_pwrite( int fh, char *buf, size_t size, off_t offset );
 
 // called at line #463 of bbfs.c
 int my_statvfs(const char *fpath, struct statvfs *statv);
 
 // called at line #530 of bbfs.c
-int my_close( ino_t fh );
+int my_close( int fh );
 
 // called at line #553 of bbfs.c
 int my_fdatasync( ino_t fh );
@@ -90,36 +95,23 @@ int my_llistxattr( const char *path, char *list, size_t size );
 // called at line #634 of bbfs.c
 int my_lremovexattr( const char *path, const char *name );
 
-
-// In the next three functions, we need to create a my_DIR* from a file
+// In the next three functions, we need to create a MY_DIR* from a file
 // handle, i.e., an (ino_t) fh.  So, how to do that?
 
-// It doesn't say this anywhere that I can find, but a my_DIR has to be
+// It doesn't say this anywhere that I can find, but a DIR has to be
 // similar to an open file.  However, rather than creating a stream of
 // bytes (chars) from the file, it creates a stream of directory
 // entries.  The key difference is how much you increment the offset
 // counter each time you move to the next item.
 
-// Note that at line #742 of bbfs.c, Professor Pfeiffer converts a
-// file handle into a my_DIR via "(uintptr_t) fh."  But, his file handles
-// are indices of byte streams, while our are the addresses of inodes.
-
-// I recommend that we simply maintain the counter as an
-// directory-entry index and increment it by one each time.  Then
-// multiply it by the size of a directory entry to get the offset of
-// the directory entry that it refers to within the directory.  To get
-// the address of that directory entry, we simply add the address of
-// the corresponding block of the directory.
-
 // called at line #659 of bbfs.c
-//MY_DIR * my_opendir( const char* fpath );
-MY_DIR * my_opendir( char* fpath );
+MY_DIR* my_opendir( char fpath[PATH_MAX] );
 
 // called at line #707 and #726 of bbfs.c
-struct dirent *my_readdir( MY_DIR * dp );
+struct dirent *my_readdir( MY_DIR *dp );
 
 // called at line #742 of bbfs.c
-int my_closedir( MY_DIR* dp );
+int my_closedir( MY_DIR *dp );
 
 // called at line #826 of bbfs.c
 int my_access( const char *fpath, int mask );
@@ -134,8 +126,15 @@ int my_ftruncate( ino_t fh, off_t offset );
 // for details see: http://manpages.ubuntu.com/manpages/hardy/man2/stat.2.html
 int my_fstat( ino_t fh, struct stat* statbuf );
 
-// called at line #1015 of bbfs.c
-char* my_realpath( const char* path, char* resolved_path );
+// Helper
+//void show_stat( struct stat& root );  
+
+// Helper
+//void initialize();                    
+
+// Helper
+//ino_t find_ino( string path );        
+
 
 #ifdef __cplusplus
 }
