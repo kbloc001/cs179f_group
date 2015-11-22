@@ -409,31 +409,31 @@ int my_open( const char *path, int flags ) {
 
 // called at line #411 of bbfs.c  Note that our firt arg is an fh not an fd
 int my_pread( int fh, char *buf, size_t size, off_t offset ) {
-	//cout << "ilist.entry[fh].data.size() = " << ilist.entry[fh].data.size() << endl;
-	
-	if(offset < 0 || ilist.entry[fh].data.size() < offset)
-	{
-		return an_err;
-	}	
-	if(offset == ilist.entry[fh].data.size() - 1)
-	{
-		return 0;
-	}
-	
-	//buf = new char[size + 1];
-	int i;	
-	for(i = 0; i < size; i++)
-	{
-		if(ilist.entry[fh].data[offset + i] == '\0')
-		{
-		  cout << "data[offset+i]: " << ilist.entry[fh].data[offset + i] << endl;
-			break;
-		}
-		buf[i] = ilist.entry[fh].data[offset + i];
+    //cout << "ilist.entry[fh].data.size() = " << ilist.entry[fh].data.size() << endl;
+    
+    if(offset < 0 || ilist.entry[fh].data.size() < offset)
+    {
+        return an_err;
+    }   
+    if(offset == ilist.entry[fh].data.size() - 1)
+    {
+        return 0;
+    }
+    
+    //buf = new char[size + 1];
+    int i;  
+    for(i = 0; i < size; i++)
+    {
+        if(ilist.entry[fh].data[offset + i] == '\0')
+        {
+          cout << "data[offset+i]: " << ilist.entry[fh].data[offset + i] << endl;
+            break;
+        }
+        buf[i] = ilist.entry[fh].data[offset + i];
                 //cout << buf[i] << " ";
-	}
-	//buf[i + 1] = '\0';
-	return i;
+    }
+    //buf[i + 1] = '\0';
+    return i;
 }  
 
 // called at line #439 of bbfs.c  Note that our firt arg is an fh not an fd
@@ -1071,92 +1071,131 @@ int main(int argc, char* argv[] ) {
   initialize();
   stringstream record;
   ifstream myin;
-  if ( argc ) myin.open( argv[1] );
-  for(;;) { // Idiom for infinite loop
+  
+  if ( argc ){myin.open( argv[1] );}
+  
+  // Idiom for infinite loop
+  for(;;) 
+  { 
     string op, file;
     // if ( myin.eof() ) exit(0);
     cout << "Which op and file? " << endl;
     (myin.good() ? myin : cin) >> op >> file;
-    if ( op != "exit" ) record << op << " " << file << endl;
-    if        ( op == "help" ) { // lists available ops
-    } else if (op == "play"  ) { // accepts input from file instead of keyboard
-    } else if (op == "save"  ) { // saves dialog to specified file
-    } else if (op == "mkdir" ) { // prompts for protection mode
+    if ( op != "exit" ){record << op << " " << file << endl;}
+    if (op == "?" || op == "help") //List available operations
+    {
+          //~ cout << "Operations: \n"; 
+          //~ cout << "\t
+          //~ cout << "\t
+          //~ cout << "\t
+          //~ cout << "\t
+          //~ cout << "\t 
+    }
+    else if (op == "play"  ) // accepts input from file instead of keyboard
+    {
+        ifstream in;
+        string playFile;
+        cout << "Enter the name of the file to play: ";
+        cin >> playFile;
+        
+   
+        
+        
+    } 
+    else if (op == "save"  ) // saves dialog to specified file
+    {
+    } 
+    else if (op == "mkdir" ) 
+    { // prompts for protection mode
       cout << "Specify file permissions in octal: ";
       mode_t mode; 
       // cin >> oct >> mode;
       (myin.good()? myin : cin) >> oct >> mode;
       record << oct << mode << endl;
       my_mkdir(file.c_str(), mode );
-    } else if (op == "rmdir"  ) { // shows file's metadata
+    } 
+    else if (op == "rmdir"  ) // shows file's metadata
+    { 
       my_rmdir(file.c_str() );
-    } else if (op == "show"  ) { // shows file's metadata
+    } 
+    else if (op == "show"  ) // shows file's metadata
+    { 
       show_stat( ilist.entry[ int(find_ino(file)) ].metadata );
-    } else if (op == "ls"  ) { // lists the specified directory. 
+    } 
+    else if (op == "ls"  ) // lists the specified directory.
+    {  
       ls(file);
-    } else if (op == "lstat"  ) { // lists the specified directory. 
+    } 
+    else if (op == "lstat"  ) // lists the specified directory.
+    {  
       struct stat a_stat;
       my_lstat(file.c_str(), &a_stat);
       show_stat(a_stat);
-    } else if (op == "exit"  ) { // quits 
+    } 
+    else if (op == "exit"  ) 
+    { // quits 
       // save dialog so far to specified file.
       ofstream myfile;
       myfile.open(file.c_str());
       myfile << record.str();
       myfile.close();
       //check if buf has anything
-	// if it does delete it
+        // if it does delete it
       return 0;
-    } else if (op == "break"  ) { // executes the rest of main()
+    } 
+    else if (op == "break"  ) // executes the rest of main()
+    { 
       break;
-    } else if (op == "lslr"  ) { // executes visit()
+    } 
+    else if (op == "lslr"  ) // executes visit()
+    {
       visit(file);
     }
-      else if (op == "read") {
-	int fh = my_open(file.c_str(), O_RDONLY);
-        size_t num_bytes = 0;
-        off_t offset = 0;
-	//int num_bytes;
-	//int offset;
-	
-	cout << "Enter number of bytes to read: ";
-        //getline(cin, num_bytes);
-	//cin >> num_bytes;
-	(myin.good()? myin : cin) >> dec >>  num_bytes;
-	cout << "Enter offset: " ;
-        (myin.good()? myin : cin) >> dec >> offset;
-	//cin >> offset;
-	//getline(cin, offset);
-	char * buf;
-	//remember to delete at some point
-	buf = new char[num_bytes]();
-        cout << "num_bytes: " << num_bytes << "offset: " << offset << endl;	
-	int status = my_pread(fh, buf, num_bytes, offset);
-	cout << endl << "Number of bytes read " << status << endl;
-	cout << buf << endl;
-	
+    else if (op == "read") 
+    {
+        int fh = my_open(file.c_str(), O_RDONLY);
+            size_t num_bytes = 0;
+            off_t offset = 0;
+        //int num_bytes;
+        //int offset;
+
+        cout << "Enter number of bytes to read: ";
+            //getline(cin, num_bytes);
+        //cin >> num_bytes;
+        (myin.good()? myin : cin) >> dec >>  num_bytes;
+        cout << "Enter offset: " ;
+            (myin.good()? myin : cin) >> dec >> offset;
+        //cin >> offset;
+        //getline(cin, offset);
+        char * buf;
+        //remember to delete at some point
+        buf = new char[num_bytes]();
+        cout << "num_bytes: " << num_bytes << "offset: " << offset << endl; 
+        int status = my_pread(fh, buf, num_bytes, offset);
+        cout << endl << "Number of bytes read " << status << endl;
+        cout << buf << endl;
     }
-      else if (op == "creat" || op == "create") {
-      cout << "Specify file permissions in octal: ";
-      mode_t mode; 
-      (myin.good()? myin : cin) >> oct >> mode;
-      record << oct << mode << endl;
-
-      my_creat( file.c_str(), mode );
-
-      } 
-      else if (op == "open"){
-      my_open( file.c_str(), O_RDONLY); // O_RDONLY for testing, should be changed depending on users permissions
-
-      }
-    else {
+    else if (op == "creat" || op == "create") 
+    {
+        cout << "Specify file permissions in octal: ";
+        mode_t mode; 
+        (myin.good()? myin : cin) >> oct >> mode;
+        record << oct << mode << endl;
+        my_creat( file.c_str(), mode );
+    } 
+    else if (op == "open")
+    {
+        // O_RDONLY for testing, should be changed depending on users permissions
+        my_open( file.c_str(), O_RDONLY); 
+    }
+    else 
+    {
       cout << "Correct usage is: op pathname,\n"; 
       cout << "where \"op\" is one of the following:\n";
       cout << "help, play, save, mkdir, show, break, lslr, exit.\n";
       cout << "For example, type \"exit now\" to exit.\n";
     }
   }  
-
   // Continuation of main(), which is reacable via the "break" op.
   show_stat( ilist.entry[2].metadata );  // all looks good here.
   cdbg << "Now we call lstat on \"/\" and &mystat" << endl;
