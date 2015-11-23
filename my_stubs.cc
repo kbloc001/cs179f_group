@@ -393,7 +393,7 @@ int my_rename( const char *path, const char *newpath ) {
   // ilist.entry[old_parent_ino].dentries.push_back(df);
   
   //ilist.entry[old_parent_ino].dentries.
-}
+
 
 // called at line #279 of bbfs.c
 int my_link(const char *path, const char *newpath) {
