@@ -492,7 +492,34 @@ int my_statvfs(const char *fpath, struct statvfs *statv) {
 
 // called at line #530 of bbfs.c
 int my_close( int fh ) {
-  
+    
+  if ( fh > 2 )
+  {
+    cout << "Closing file, fh = " << fh << endl;
+    //search open_file map for fh
+    //returns map::end() if nothing found
+    std::map<ino_t,int>::iterator search_result;
+    search_result = open_files.find(fh);
+    if(search_result  != open_files.end())
+    {
+        cout << "before close .at(fh): " << open_files.at(fh) << endl;
+        open_files.at(fh) = open_files.at(fh) -1;
+        cout << "after close .at(fh): " << open_files.at(fh) << endl;
+    }
+    else if(search_result == open_files.end())
+    {
+     cout << "File with fh: \"" << fh << "\" not found.\n";
+     return an_err;
+    }
+    //if no more files open
+    if(open_files.at(fh) <= 0)
+    {
+        //remove file from open_files map
+        cout << "Removing file with fh: \"" << fh << "\" from open_files.\n";
+        open_files.erase(search_result);
+    }
+    return 0;
+  }
   return an_err;
 }  
 
@@ -1252,6 +1279,21 @@ int main(int argc, char* argv[] ) {
     {
         // O_RDONLY for testing, should be changed depending on users permissions
         my_open( file.c_str(), O_RDONLY); 
+    }
+    else if(op == "close")
+    {
+      int fh = 0;
+      cout << "Enter fh to close: ";
+      cin >> fh;
+      int close_result  = my_close(fh);
+      if (close_result == 0)
+      {
+          cout << "Successfully closed handle.";
+      }
+      else if (close_result == an_err)
+      {
+          cout << "Error: Unable to close file handle." << endl;
+      }
     }
     else 
     {
