@@ -358,10 +358,20 @@ int my_link(const char *path, const char *newpath) {
   return ok;  
 }  
 
-// called at line #296 of bbfs.c
+/* Change permissions of a file. The new file permissions of the file
+   are specified in [mode], which is a bit mask created by ORing together
+   zero or more of the following: S_ISUID(04000), S_ISGID(02000), ...
+   Return value: On sucess, zero is returned. On error, -1 is returned,
+   and [errno] is set appropriately.
+   (Reference: http://linux.die.net/man/2/chmod)
+*/
 int my_chmod(const char *path, mode_t mode) {
+  //if [path] is a symbolic link, then dereference it first
+  ino_t fh = find_ino(path);
+  ilist.entry[fh].metadata.st_mode = mode;
+
   return an_err;  
-}  
+} 
 
 // called at line #314 of bbfs.c
 int my_chown(const char *path, uid_t uid, gid_t gid) {
