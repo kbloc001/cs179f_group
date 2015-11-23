@@ -330,10 +330,38 @@ int my_symlink(const char *path, const char *link) {
   return an_err;  
 }  
 
-// called at line #261 of bbfs.c
+
 int my_rename( const char *path, const char *newpath ) {
-  return an_err;  
-}  
+
+  vector<string> v = split( path, "/" );
+  string old_file_name = v.back();
+  v.pop_back();
+
+  ino_t old_parent_ino = find_ino(join(v, "/"));
+  ino_t old_file_ino = find_ino(path);
+
+
+  v = split( newpath, "/" );
+  string new_file_name = v.back();
+  v.pop_back();
+
+  ino_t new_parent_ino = find_ino(join(v, "/"));
+  ino_t new_file_ino = find_ino(path);
+  
+  for(vector<dirent_frame>::iterator it = ilist.entry[old_parent_ino].dentries.begin(); it !=  ilist.entry[old_parent_ino].dentries.end(); ++it){
+    if(it->the_dirent.d_name == old_file_name) it->the_dirent.d_name = new_file_name.c_str();
+  }
+
+}
+
+  //dirent_frame df;
+  // Add a new dentry
+  // df.the_dirent.d_ino = old_file_ino;
+  // strcpy(df.the_dirent.d_name, old_file_name.c_str());
+  // ilist.entry[old_parent_ino].dentries.push_back(df);
+  
+  //ilist.entry[old_parent_ino].dentries.
+}
 
 // called at line #279 of bbfs.c
 int my_link(const char *path, const char *newpath) {
