@@ -76,7 +76,7 @@ ino_t find_ino( string path );
 // name.
 #define cdbg cerr <<"\nLn "<<dec<<  __LINE__ << " of "  << __FUNCTION__ << ": "
 
-
+map< ino_t,int > open_files;
 string cwd;   // to hold name of current working directory but not used yet.
 
 struct dirent_frame { // The official definition of dirent puts its users
@@ -402,19 +402,41 @@ int my_open( const char *path, int flags ) {
   //static filecount = 0;
 
   ino_t fh = find_ino(path);
-  if ( fh >= 0 ) {
+  
+  if ( fh > 2 ) {
     cout << "file opened, fh = " << fh << endl;
+      //search open_file map for fh
+     //returns map::end() if nothing found
+    if(open_files.find(fh) != open_files.end())
+    {
+        cout << "before open_files.at(fh): " << open_files.at(fh) << endl;
+        open_files.at(fh) = open_files.at(fh) + 1;
+        cout << " after openfiles.at(fh): " << open_files.at(fh) << endl;
+    }
+    else
+    {
+        //if file not opened insert file into open_file list
+        open_files.insert(std::pair<ino_t,int >(fh,1));      
+        cout << " new  openfiles.at(fh): " << open_files.at(fh) << endl;
+    } 
     return fh;
   } 
-
   else if ( flags & O_CREAT ) {
     mode_t mode = 0644;
     my_creat( path, mode );
     fh = find_ino(path);
     cout << "file created & opened, fh = " << fh << endl;
+    //insert file into open file map
+    open_files.insert(std::pair<ino_t,int >(fh,1));
+    cout << " new  openfiles.at(fh): " << open_files.at(fh) << endl;
+    
     return fh;
   }
-
+  else
+  {
+    cout << "File: \"" << path << "\" failed to open.\n";
+    return -1;
+  }
 }  
 
 // called at line #411 of bbfs.c  Note that our firt arg is an fh not an fd
