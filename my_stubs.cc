@@ -365,13 +365,19 @@ int my_link(const char *path, const char *newpath) {
    and [errno] is set appropriately.
    (Reference: http://linux.die.net/man/2/chmod)
 */
+// called at line #296 of bbfs.c
 int my_chmod(const char *path, mode_t mode) {
-  //if [path] is a symbolic link, then dereference it first
   ino_t fh = find_ino(path);
-  ilist.entry[fh].metadata.st_mode = mode;
-
+  //not sure if it is allowed to chan
+  if ( fh > 2 )
+  {
+  ilist.entry[fh].metadata.st_mode =  mode;
+  cout << "Permissions changed on: \"" << path << "\"" << endl;
+  return 0;
+  }
+  cout << "Failed to find file: \"" << path << "\"" << endl;
   return an_err;  
-} 
+}  
 
 // called at line #314 of bbfs.c
 int my_chown(const char *path, uid_t uid, gid_t gid) {
@@ -1294,6 +1300,14 @@ int main(int argc, char* argv[] ) {
       {
           cout << "Error: Unable to close file handle." << endl;
       }
+    }
+    else if(op == "chmod")
+    {
+        cout << "Specify new file permissions in octal: ";
+        mode_t mode; 
+        (myin.good()? myin : cin) >> oct >> mode;
+        record << oct << mode << endl;
+        my_chmod(file.c_str(), mode);
     }
     else 
     {
