@@ -64,6 +64,8 @@ c#include <sys/xattr.h>
 
 using namespace std;
 
+const int DELETED = INT_MAX;
+
 // Prototypes for local functions.  There's no need to put these into
 // my_stubs.H, since these functions are local to my_stubs.cc.
 void show_stat( struct stat& root );
@@ -283,7 +285,37 @@ int my_mkdir( const char *path, mode_t mode ) {
 
 // called at line #203 of bbfs.cg
 int my_unlink( const char *path ) {
-  return an_err;   
+  vector<string> v = split(string(path),"/");
+  string tail = v.back();
+  string dirpath = join(v, "/");
+  ino_t fh = find_ino(path);
+  if(fh == 0)
+  {
+    cout << "File Not Found\n";
+    return an_err;
+  }
+  if(open_files.find(fh) != open_files.end())
+  {
+    if(open_files.at(fh) > 0)
+    {
+      cout << "File In Use! Cannot Unlink!\n";
+      return an_err;      
+    }
+  }
+  else
+  {
+    if(ilist.entry[fh].metadata.st_nlink > 0) //Decrease number of opened links to a file
+    {
+      (ilist.entry[fh].metadata.st_nlink)--;
+    }
+    if(ilist.entry[fh].metadata.st_nlink == 0) //If the number of links to a file is 0, delete the file
+    {
+      ilist.entry[fh].metadata.st_ino = DELETED;
+      map<ino_t, File>::iterator it = ilist.entry.find(fh);
+      ilist.entry.erase(it);
+    }
+  }
+  return 0;
 }  
 
 // called at line #220 of bbfs.c
@@ -437,7 +469,12 @@ int my_open( const char *path, int flags ) {
 
   ino_t fh = find_ino(path);
   
-  if ( fh > 2 ) {
+  if(ilist.entry[fh].metadata.st_ino == DELETED)
+  {
+    cout << "File: \"" << path << "\" failed to open.\n";
+    return -1;    
+  }
+  else if ( fh > 2 ) {
     cout << "file opened, fh = " << fh << endl;
       //search open_file map for fh
      //returns map::end() if nothing found
@@ -471,7 +508,7 @@ int my_open( const char *path, int flags ) {
     cout << "File: \"" << path << "\" failed to open.\n";
     return -1;
   }
-}  
+}
 
 // called at line #411 of bbfs.c  Note that our firt arg is an fh not an fd
 int my_pread( int fh, char *buf, size_t size, off_t offset ) {
