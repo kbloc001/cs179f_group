@@ -381,7 +381,11 @@ int my_rename( const char *path, const char *newpath ) {
   ino_t new_file_ino = find_ino(path);
   
   for(vector<dirent_frame>::iterator it = ilist.entry[old_parent_ino].dentries.begin(); it !=  ilist.entry[old_parent_ino].dentries.end(); ++it){
-    if(it->the_dirent.d_name == old_file_name) it->the_dirent.d_name = new_file_name.c_str();
+    if(it->the_dirent.d_name == old_file_name)
+    {
+      return 0;  
+     //it->the_dirent.d_name = new_file_name.c_str();
+    }
   }
 
 }
@@ -440,7 +444,57 @@ int my_chmod(const char *path, mode_t mode) {
 }  
 
 // called at line #314 of bbfs.c
+/*chown changes the user and/or group ownership of each given file. 
+ * If only an owner (a user name or numeric user ID) is given, 
+ * that user is made the owner of each given file, and the files' 
+ * group is not changed. 
+ * If the owner is followed by a colon and a group name 
+ * (or numeric group ID), with no spaces between them, 
+ * the group ownership of the files is changed as well. 
+ * If a colon but no group name follows the user name, that
+ *  user is made the owner of the files and the group of the 
+ * files is changed to that user's login group. If the colon
+ *  and group are given, but the owner is omitted, 
+ * only the group of the files is changed; in this case, 
+ * chown performs the same function as chgrp.
+ *  If only a colon is given, or if the entire operand
+ *  is empty, neither the owner nor the group is changed. 
+*/
 int my_chown(const char *path, uid_t uid, gid_t gid) {
+        
+     //uid_t     st_uid;
+     /* TODO: Check file permissions */
+     // md.st_gid     = getegid();   
+    // Payne uses these get the username / group name
+    //getpwuid(st.st_uid)->pw_name,     // password name
+    //getgrgid(st.st_gid)->gr_name,     // group name
+    uid_t file_owneruid = 0;// ilist.entry[fh].metadata.st_uid;
+    uid_t cur_uid = geteuid(); //Payne also uses this function when making files
+    ino_t fh = find_ino(path);;
+    if ( fh == 0 ) 
+    {
+        cout << "Filepath: \"" << path << "\" not found.\n";
+        return an_err;
+    } 
+    else 
+    {
+        //for now just comparing uids
+        uid_t file_owneruid = ilist.entry[fh].metadata.st_uid;
+        //group_id to be used if user also specifies group
+        gid_t file_ownergid = ilist.entry[fh].metadata.st_gid;
+        //TODO: check permissions then change if allowed
+         ilist.entry[fh].metadata.st_uid = uid;
+         cout << "changed uid to: " << uid << endl;
+         //cout << "File Owner changed to: " <<  getpwuid(ilist.entry[fh].metadata.st_uid)->pw_name << endl;
+          //don't change gid if gid is -1
+         if(gid != 0)
+         {
+            ilist.entry[fh].metadata.st_gid = gid;
+            cout << "changed gid to: " << gid << endl;
+            //cout << "File Group changed to: " <<  getgrgid(ilist.entry[fh].metadata.st_gid)->gr_name << endl;
+         }
+        return 0;
+    }  
   return an_err;  
 }  
 
@@ -626,16 +680,71 @@ int my_lremovexattr( const char *path, const char *name ) {
 
 
 // called at line #826 of bbfs.c
+//uses the process UID and GID to determine if user has access
+//returns 0 on success. (All permissions granted)
+//-1 otherwise
 int my_access( const char *fpath, int mask ) {
-  return an_err;  
+    
+     //uid_t     st_uid;
+     /* TODO: Check file permissions 
+     *  in order to determine if okay for other
+     *  users with same GroupID allowed to alter file
+     *  For now though, only concerned with UIDs as
+     *  no way of really 'logging in' with a different GID
+     *  Guess you could technically use chown to do this. 
+     * Will implement later.
+     * 
+     *  NEED TO USE MASK SOMEHOW 
+     * */
+    
+    // Payne uses these get the username / group name
+    //getpwuid(st.st_uid)->pw_name,     // password name
+    //getgrgid(st.st_gid)->gr_name,     // group name
+    uid_t file_owneruid = 0;// ilist.entry[fh].metadata.st_uid;
+    uid_t cur_uid = geteuid(); //Payne also uses this function when making files
+    ino_t fh = find_ino(fpath);;
+    if ( fh == 0 ) 
+    {
+        cout << "Filepath: \"" << fpath << "\" not found.\n";
+        return an_err;
+    } 
+    else 
+    {
+        //for now just comparing uids
+        uid_t file_owneruid = ilist.entry[fh].metadata.st_uid;
+        if(file_owneruid == cur_uid)
+        {
+            cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+                 << " has access to " << fpath << endl;
+            return 0;
+        }
+        else
+        {
+         cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+              << " does not have permissions for " << fpath << endl;
+         cout << "User: " << getpwuid(file_owneruid)->pw_name << " has permissions." << endl;
+          return an_err;  
+        } 
+    }  
+    return an_err;  
 }  
 
 // called at line #856 of bbfs.c
 int my_creat( const char *fpath, mode_t mode ) {
   // we can create a file by using the right flags to open
   // ADD: if file is already exists, check flags for append
-  cout << "file created: " << fpath << endl;
-  return my_mknod(fpath, (S_IFREG | mode), 100 );
+  ino_t fh = find_ino(fpath);
+  if(fh == 0)
+  {
+    cout << "file created: " << fpath << endl;
+    return my_mknod(fpath, (S_IFREG | mode), 100 );
+  }
+  else
+  {
+      //ADD CHECK FOR FLAGS FOR APPEND  ABOVE THIS
+      cout << "File \"" << fpath << "\" already exists." << endl;
+      return 0;
+  }
 }  
 
 // called at line #887 of bbfs.c
@@ -1373,6 +1482,25 @@ int main(int argc, char* argv[] ) {
         (myin.good()? myin : cin) >> oct >> mode;
         record << oct << mode << endl;
         my_chmod(file.c_str(), mode);
+    }
+    else if (op == "access")
+    {
+        cout << "Specify mask:" ;
+        mode_t mode; 
+        (myin.good()? myin : cin) >> oct >> mode;
+        record << oct << mode << endl;
+        my_access(file.c_str(), mode);
+    }
+    else if (op == "chown")
+    {
+        uid_t new_uid = 0;
+        gid_t new_gid = 0;
+        cout << "Enter new file owner uid: ";
+        cin >> dec >> new_uid;
+        cout << "Enter new file group id (0 if no change):";
+        cin >> dec >> new_gid;
+        //const char path, uid_t uid, gid_t gid  
+        my_chown(file.c_str(), new_uid, new_gid);
     }
     else 
     {
