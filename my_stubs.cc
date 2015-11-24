@@ -286,7 +286,7 @@ int my_mkdir( const char *path, mode_t mode ) {
 // called at line #203 of bbfs.cg
 int my_unlink( const char *path ) {
   vector<string> v = split(string(path),"/");
-  string tail = v.back();
+  string fileName = v.back();
   string dirpath = join(v, "/");
   ino_t fh = find_ino(path);
   if(fh == 0)
@@ -310,9 +310,35 @@ int my_unlink( const char *path ) {
     }
     if(ilist.entry[fh].metadata.st_nlink == 0) //If the number of links to a file is 0, delete the file
     {
-      ilist.entry[fh].metadata.st_ino = DELETED;
-      map<ino_t, File>::iterator it = ilist.entry.find(fh);
-      ilist.entry.erase(it);
+      //ilist.entry[fh].metadata.st_ino = DELETED;
+      map<ino_t, File>::iterator ilist_it;
+      vector<dirent_frame>::iterator dentry_it;
+      
+      //This is a way to find the directory entry
+      //Look through the map for all files and directories
+      for(ilist_it = ilist.entry.begin(); ilist_it != ilist.entry.end(); ilist_it++)
+      {
+        //If the current element is a directory
+        if(S_ISDIR(ilist_it->second.metadata.st_mode))
+        {
+          //Parse the directory
+          for(dentry_it = ilist_it->second.dentries.begin(); dentry_it != ilist_it->second.dentries.end(); dentry_it++)
+          {
+            //If the inode number is the same as the file we want to delete
+            //if(ilist.entry[fh].metadata.st_ino == )
+            cout << "fh: " << fh << " d_ino: " << dentry_it->the_dirent.d_ino << "\n";
+            if(fh == dentry_it->the_dirent.d_ino)
+            {
+              //Delete the file from the directory
+              ilist_it->second.dentries.erase(dentry_it);
+              break;
+            }
+          }
+        }
+      }
+      //Final Step to Deleting a file
+      ilist_it = ilist.entry.find(fh);
+      ilist.entry.erase(ilist_it);
     }
   }
   return 0;
@@ -1584,6 +1610,21 @@ int main(int argc, char* argv[] ) {
        cin >> new_fname;
        my_rename(file.c_str(), new_fname.c_str());
     }
+    else if (op == "unlink")
+    {
+      //~ string fileName;
+      //~ cout << "Enter file name to unlink: ";
+      //~ cin >> fileName;
+      //Success
+      if(my_unlink(file.c_str()) == 0)
+      {
+        cout << "Unlink successful!\n";
+      }
+      else
+      {
+        cout << "Unlink unsucessful!\n";
+      }
+    }    
     else if (op == "truncate")
     {
          off_t new_file_size;
