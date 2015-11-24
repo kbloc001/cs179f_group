@@ -365,13 +365,18 @@ int my_symlink(const char *path, const char *link) {
 
 int my_rename( const char *path, const char *newpath ) {
 
+  int i = 0;
   vector<string> v = split( path, "/" );
   string old_file_name = v.back();
   v.pop_back();
 
   ino_t old_parent_ino = find_ino(join(v, "/"));
   ino_t old_file_ino = find_ino(path);
-
+  if(old_file_ino == 0)
+  {
+     cout << "Failed to find file: \"" << path << "\"" << endl;
+     return -1;
+  }
 
   v = split( newpath, "/" );
   string new_file_name = v.back();
@@ -379,13 +384,23 @@ int my_rename( const char *path, const char *newpath ) {
 
   ino_t new_parent_ino = find_ino(join(v, "/"));
   ino_t new_file_ino = find_ino(path);
-  
   for(vector<dirent_frame>::iterator it = ilist.entry[old_parent_ino].dentries.begin(); it !=  ilist.entry[old_parent_ino].dentries.end(); ++it){
     if(it->the_dirent.d_name == old_file_name)
     {
-      return 0;  
+      //return 0;
+      //dirent char d_name[]  
      //it->the_dirent.d_name = new_file_name.c_str();
+     for(i = 0; i < new_file_name.size() ; i++)
+     {
+         it->the_dirent.d_name[i] = new_file_name[i];
+     }
+     //slight workaround
+     //however if the filename is too long then this could very well
+     //cause a segfault
+     it->the_dirent.d_name[i] = '\0';
+     return 0;
     }
+    
   }
 
 }
@@ -499,7 +514,38 @@ int my_chown(const char *path, uid_t uid, gid_t gid) {
 }  
 
 // called at line #331 of bbfs.c
+/*The truncate() and ftruncate() functions cause the regular 
+ * file named by path or referenced by fd to be truncated to 
+ * a size of precisely length bytes.
+ * If the file previously was larger than this size, 
+ * the extra data is lost. If the file previously was shorter, 
+ * it is extended, and the extended part reads as null bytes ('\0').
+ * The file offset is not changed.
+ * If the size changed, then the st_ctime and st_mtime fields 
+ * (respectively, time of last status change and time of 
+ * last modification; see stat(2)) for the file are updated, 
+ * and the set-user-ID and set-group-ID permission bits may be cleared.
+ * With ftruncate(), the file must be open for writing; 
+ * with truncate(), the file must be writable.
+ * */
 int my_truncate(const char *path, off_t newsize) {
+    ino_t fh = find_ino(path);
+    //ilist.entry[fh].data.size() < offset
+    /* TODO: check file permissions to see if can write to file 
+     * */
+    if ( fh == 0 ) 
+    {
+        cout << "Filepath: \"" << path << "\" not found.\n";
+        return an_err;
+    } 
+    else 
+    {
+     //exploit the fact that we have strings here
+     //when the string is increased
+     //the function sets the added characters to null
+        ilist.entry[fh].data.resize(newsize);   
+        return 0;
+    }  
   return an_err;  
 }  
 
@@ -748,7 +794,36 @@ int my_creat( const char *fpath, mode_t mode ) {
 }  
 
 // called at line #887 of bbfs.c
+//int my_truncate(const char *path, off_t newsize)
+//ftruncate checks if the file is open before attempting to truncate
+//found in the manual of ftruncate
 int my_ftruncate( ino_t fh, off_t offset ) {
+    //ilist is a global
+    //can access anywhere
+    //ino_t fh = find_ino(path);
+    
+    //ilist.entry[fh].data.size() < offset
+    /* TODO: check file permissions to see if can write to file 
+     * */
+    if ( fh < 2 || fh > ilist.count) 
+    {
+        cout << "Fh: \"" << fh << "\" cannot be truncated.\n";
+        return an_err;
+    }
+    else if( open_files.find(fh) == open_files.end())
+    {
+        //check open files for file if not open then cannot truncate
+        cout << "Fh: \"" << fh << "\" is not open. Cannot be truncated\n";
+        return an_err;
+    }
+    else 
+    {
+     //exploit the fact that we have strings here
+     //when the string is increased
+     //the function sets the added characters to null
+        ilist.entry[fh].data.resize(offset);   
+        return 0;
+    }  
   return an_err;  
 }  
 
@@ -1426,8 +1501,8 @@ int main(int argc, char* argv[] ) {
     else if (op == "read") 
     {
         int fh = my_open(file.c_str(), O_RDONLY);
-            size_t num_bytes = 0;
-            off_t offset = 0;
+        size_t num_bytes = 0;
+        off_t offset = 0;
         //int num_bytes;
         //int offset;
 
@@ -1436,7 +1511,7 @@ int main(int argc, char* argv[] ) {
         //cin >> num_bytes;
         (myin.good()? myin : cin) >> dec >>  num_bytes;
         cout << "Enter offset: " ;
-            (myin.good()? myin : cin) >> dec >> offset;
+        (myin.good()? myin : cin) >> dec >> offset;
         //cin >> offset;
         //getline(cin, offset);
         char * buf;
@@ -1501,6 +1576,32 @@ int main(int argc, char* argv[] ) {
         cin >> dec >> new_gid;
         //const char path, uid_t uid, gid_t gid  
         my_chown(file.c_str(), new_uid, new_gid);
+    }
+    else if (op == "rename")
+    {
+       string new_fname;
+       cout << "Enter new file name: " ;
+       cin >> new_fname;
+       my_rename(file.c_str(), new_fname.c_str());
+    }
+    else if (op == "truncate")
+    {
+         off_t new_file_size;
+         //int my_truncate(const char *path, off_t newsize)
+         cout << "Enter new file size: " ;
+         cin >> dec >> new_file_size;
+         my_truncate(file.c_str(), new_file_size);
+    }
+    else if (op == "ftruncate")
+    {
+        //int my_ftruncate( ino_t fh, off_t offset ) {
+         off_t new_file_size;
+         ino_t fh;
+         cout << "Enter fh of file: " ;
+         cin >> dec >> fh;
+         cout << "Enter new file size: " ;
+         cin >> dec >> new_file_size;
+         my_ftruncate(fh, new_file_size);
     }
     else 
     {
