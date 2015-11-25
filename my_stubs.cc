@@ -274,6 +274,114 @@ int my_mknod( const char *path, mode_t mode, dev_t dev ) {
 
 }  
 
+//check the the permissions of a file
+//by using bitwise operations to determine
+//
+bool check_permissions(ino_t fh, string operation)
+{
+   // cout << "fh: " << fh  << " ilist.count: " << dec << ilist.count << endl;
+    if(fh < 2)// || ilist.count < fh)
+    {
+        cout << "Invalid fh.\n";
+        return false;
+    }
+    
+    //current user's gid and uid
+    uid_t cur_uid = geteuid(); //Payne also uses this function when making files
+    gid_t cur_gid = getegid();  
+    //files gid and uid
+    uid_t file_owneruid = ilist.entry[fh].metadata.st_uid;
+    gid_t file_ownergid = ilist.entry[fh].metadata.st_gid;
+    mode_t file_permissions = ilist.entry[fh].metadata.st_mode; 
+    //cout << "file_owneruid: " << file_owneruid << endl;
+    //cout << "cur_uid: " << cur_uid << endl;
+    /* octal values for different flag permissions
+     * will simply do a bitwise AND to determine if user has permissions
+     * */
+    mode_t uread_mode = 400;
+    mode_t uwrite_mode = 200;
+    mode_t uexec_mode = 100;
+    mode_t gread_mode = 040;
+    mode_t gwrite_mode = 020;
+    mode_t gexec_mode = 010;
+    mode_t oread_mode = 004;
+    mode_t owrite_mode = 002;
+    mode_t oexec_mode = 001;
+    mode_t result = 0;
+    
+    //check if uid's gid's match
+    bool is_owner = false;
+    if(cur_uid == file_owneruid)
+    {
+      is_owner = true;   
+    }
+    else
+    {
+        is_owner = false;
+    }
+    
+    bool is_group = false; 
+    if(cur_gid == file_ownergid)
+    {
+        is_group =  true;
+    }
+    else
+    {
+        is_group = false;
+    }
+    
+    if(operation == "read")
+    {
+        if(is_owner)
+        {
+          return file_permissions&uread_mode;
+        }
+        else if(is_group)
+        {
+          return file_permissions&gread_mode;
+        }
+        else
+        {
+         return file_permissions&oread_mode;   
+        }
+        return false;
+    }
+    else if(operation == "write")
+    {
+        if(is_owner)
+        {
+          return file_permissions&uwrite_mode;
+        }
+        else if(is_group)
+        {
+          return file_permissions&gwrite_mode;
+        }
+        else
+        {
+          return file_permissions&owrite_mode;   
+        }
+        
+        return false;
+    }
+    else if(operation == "execute")
+    {
+        if(is_owner)
+        {
+          return file_permissions&uexec_mode;
+        }
+        else if(is_group)
+        {
+          return file_permissions&gexec_mode;
+        }
+        else
+        {
+          return file_permissions&oexec_mode;   
+        }
+      //won't need as we will not have executables
+      return false;
+    }
+    return false;
+}
 
 // called at line #186 of bbfs.c
 int my_mkdir( const char *path, mode_t mode ) {
@@ -470,10 +578,17 @@ int my_link(const char *path, const char *newpath) {
    and [errno] is set appropriately.
    (Reference: http://linux.die.net/man/2/chmod)
 */
+/* Each file and directory has 3 user based group permission groups:
+ * owner
+ * group
+ * all users
+ * 
+ * */
 // called at line #296 of bbfs.c
 int my_chmod(const char *path, mode_t mode) {
   ino_t fh = find_ino(path);
   //not sure if it is allowed to chan
+  
   if ( fh > 2 )
   {
   ilist.entry[fh].metadata.st_mode =  mode;
@@ -649,37 +764,60 @@ int my_pread( int fh, char *buf, size_t size, off_t offset ) {
         return 0;
     }
     
-    //buf = new char[size + 1];
-    int i;  
-    for(i = 0; i < size; i++)
+    if(check_permissions(fh,"read"))
     {
-        if(ilist.entry[fh].data[offset + i] == '\0')
+        //buf = new char[size + 1];
+        int i;  
+        for(i = 0; i < size; i++)
         {
-          cout << "data[offset+i]: " << ilist.entry[fh].data[offset + i] << endl;
-            break;
+            if(ilist.entry[fh].data[offset + i] == '\0')
+            {
+              cout << "data[offset+i]: " << ilist.entry[fh].data[offset + i] << endl;
+                break;
+            }
+            buf[i] = ilist.entry[fh].data[offset + i];
+                    //cout << buf[i] << " ";
         }
-        buf[i] = ilist.entry[fh].data[offset + i];
-                //cout << buf[i] << " ";
+        //buf[i + 1] = '\0';
+        return i;
     }
-    //buf[i + 1] = '\0';
-    return i;
+    else
+    {
+        uid_t cur_uid = geteuid(); 
+        cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+             << " does not have permission to read from this file.\n";
+        return 0;
+    }
 }  
 
 // called at line #439 of bbfs.c  Note that our firt arg is an fh not an fd
-int my_pwrite( int fh, const char *buf, size_t size, off_t offset ) {
+int my_pwrite( int fh, const char *buf, size_t size, off_t offset ) 
+{
+  
   if(offset < 0 || ilist.entry[fh].data.size() < offset){return an_err;}
   if(offset == ilist.entry[fh].data.size() -1){return 0;}
   
-  int i = 0;
-  for(i = 0; i < strlen(buf); i++){
-    if(ilist.entry[fh].data[offset+i] == '\0'){
-      cout << "End of fh#" << fh << "reached, write complete" << endl;
-    }
+  if(check_permissions(fh,"write"))
+  {
+    int i = 0;
+    for(i = 0; i < strlen(buf); i++)
+    {
+        if(ilist.entry[fh].data[offset+i] == '\0')
+        {
+        cout << "End of fh#" << fh << "reached, write complete" << endl;
+        }
     
-    ilist.entry[fh].data[i+offset] = buf[i];
+        ilist.entry[fh].data[i+offset] = buf[i];
+    }
+    return i;
   }
-  
-  return i;
+  else
+  {
+    uid_t cur_uid = geteuid();  
+    cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+         << " does not have permission to write to this file.\n";
+    return 0;
+  } 
 }  
 
 // called at line #463 of bbfs.c
