@@ -412,6 +412,14 @@ int my_unlink( const char *path ) {
   }
   else
   {
+    if(check_permissions(fh,"write") == false)
+    {
+      uid_t cur_uid = geteuid(); 
+      cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+           << " does not have write permissions to unlink this file.\n"; 
+      return an_err;   
+    }
+        
     if(ilist.entry[fh].metadata.st_nlink > 0) //Decrease number of opened links to a file
     {
       (ilist.entry[fh].metadata.st_nlink)--;
@@ -512,6 +520,13 @@ int my_rename( const char *path, const char *newpath ) {
      return -1;
   }
 
+  if(check_permissions(old_file_ino,"write") == false)
+  {
+    uid_t cur_uid = geteuid(); 
+    cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+         << " does not have write permissions to rename this file.\n"; 
+         return an_err;   
+  }
   v = split( newpath, "/" );
   string new_file_name = v.back();
   v.pop_back();
