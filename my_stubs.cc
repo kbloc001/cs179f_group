@@ -921,38 +921,91 @@ int my_access( const char *fpath, int mask ) {
      * 
      *  NEED TO USE MASK SOMEHOW 
      * */
-    
+    int read_val = 114;
+    int write_val = 119;
+    int exec_val = 120;
+    int file_val = 102;
+    //cout << "perm_in: " << mask << endl;
     // Payne uses these get the username / group name
     //getpwuid(st.st_uid)->pw_name,     // password name
     //getgrgid(st.st_gid)->gr_name,     // group name
     uid_t file_owneruid = 0;// ilist.entry[fh].metadata.st_uid;
     uid_t cur_uid = geteuid(); //Payne also uses this function when making files
-    ino_t fh = find_ino(fpath);;
+    ino_t fh = find_ino(fpath);
     if ( fh == 0 ) 
     {
         cout << "Filepath: \"" << fpath << "\" not found.\n";
         return an_err;
     } 
     else 
-    {
-        //for now just comparing uids
-        uid_t file_owneruid = ilist.entry[fh].metadata.st_uid;
-        if(file_owneruid == cur_uid)
+    {   
+        if(mask == file_val)
         {
-            cout << "Current user: " << getpwuid(cur_uid)->pw_name  
-                 << " has access to " << fpath << endl;
-            return 0;
+          if ( fh == 0 ) 
+          {
+            cout << "Filepath: \"" << fpath << "\" not found.\n";
+            return an_err;
+          }
+          else
+          {
+            cout << "Filepath: \"" << fpath << "\" exists.\n";
+            return an_err;
+          }
+            
+        }
+        if(mask == read_val)
+        {
+            if(check_permissions(fh,"read"))
+            {
+             cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+                  << " has read access to " << fpath << endl;
+             return 0;
+            }
+            else
+            {
+             cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+                  << " does not have read access to " << fpath << endl;
+             return an_err;   
+            }
+        }
+        else if(mask == write_val)
+        {
+              if(check_permissions(fh,"write"))
+            {
+             cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+                  << " has write access to " << fpath << endl;
+             return 0;
+            }
+            else
+            {
+             cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+                  << " does not have write access to " << fpath << endl;
+             return an_err;   
+            }
+        }
+        else if(mask == exec_val)
+        {
+              if(check_permissions(fh,"execute"))
+            {
+             cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+                  << " has execute access to " << fpath << endl;
+             return 0;
+            }
+            else
+            {
+             cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+                  << " does not have execute access to " << fpath << endl;
+             return an_err;   
+            }
         }
         else
         {
-         cout << "Current user: " << getpwuid(cur_uid)->pw_name  
-              << " does not have permissions for " << fpath << endl;
-         cout << "User: " << getpwuid(file_owneruid)->pw_name << " has permissions." << endl;
-          return an_err;  
-        } 
-    }  
+         cout << "Invalid permission value entered.(Needs to be: r , w , or x)\n";
+         return an_err;   
+        }
+    }
     return an_err;  
-}  
+} 
 
 // called at line #856 of bbfs.c
 int my_creat( const char *fpath, mode_t mode ) {
@@ -1739,11 +1792,13 @@ int main(int argc, char* argv[] ) {
     }
     else if (op == "access")
     {
-        cout << "Specify mask:" ;
-        mode_t mode; 
-        (myin.good()? myin : cin) >> oct >> mode;
-        record << oct << mode << endl;
-        my_access(file.c_str(), mode);
+        cout << "Enter file permission to check (f,r,w,x):" ;
+        char perm = 0; 
+        cin >> perm;
+        record << perm << endl;
+        //cout << "perm_before : " << perm << endl;
+        my_access(file.c_str(), perm);
+        cin.clear();
     }
     else if (op == "chown")
     {
