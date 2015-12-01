@@ -700,7 +700,20 @@ int my_chown(const char *path, uid_t uid, gid_t gid) {
     uid_t file_owneruid = 0;// ilist.entry[fh].metadata.st_uid;
     uid_t cur_uid = geteuid(); //Payne also uses this function when making files
     ino_t fh = find_ino(path);
-    //find_ino returns 0 if file cannot be found
+    
+    /*getpwuid returns NULL when user with that uid cannot be found
+    */
+    if(uid != 0 && getpwuid(uid) == NULL)
+    {
+		cout << "Invalid uid. User does not exist.\n";
+		return an_err;
+	}
+	//getgrgid returns NULL when group with specified gid cannot be found
+	if(gid != 0 && getgrgid(gid) == NULL)
+	{
+		cout << "Invalid gid. Group does not exist.\n";
+		return an_err;
+	}
     if ( fh == 0 ) 
     {
         cout << "Filepath: \"" << path << "\" not found.\n";
@@ -709,18 +722,19 @@ int my_chown(const char *path, uid_t uid, gid_t gid) {
     else 
     {
         //for now just comparing uids
-        //get file onwer uid
         uid_t file_owneruid = ilist.entry[fh].metadata.st_uid;
         //group_id to be used if user also specifies group
         gid_t file_ownergid = ilist.entry[fh].metadata.st_gid;
         //TODO: check permissions then change if allowed
+        if(uid != 0)
+        {
          ilist.entry[fh].metadata.st_uid = uid;
          cout << "changed uid to: " << uid << endl;
+        } 
          //cout << "File Owner changed to: " <<  getpwuid(ilist.entry[fh].metadata.st_uid)->pw_name << endl;
           //don't change gid if gid is -1
          if(gid != 0)
          {
-           //overwrite file's associated gid with new gid
             ilist.entry[fh].metadata.st_gid = gid;
             cout << "changed gid to: " << gid << endl;
             //cout << "File Group changed to: " <<  getgrgid(ilist.entry[fh].metadata.st_gid)->gr_name << endl;
@@ -729,6 +743,7 @@ int my_chown(const char *path, uid_t uid, gid_t gid) {
     }  
   return an_err;  
 }  
+
 
 // called at line #331 of bbfs.c
 /*The truncate() and ftruncate() functions cause the regular 
