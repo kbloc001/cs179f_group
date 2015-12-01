@@ -274,12 +274,19 @@ int my_mknod( const char *path, mode_t mode, dev_t dev ) {
 
 }  
 
-//check the the permissions of a file
-//by using bitwise operations to determine
-//
+/*check the the permissions of a file
+*by using bitwise operations to determine
+*if the file specified by the given fh 
+*has given permissions to the current user.
+* Within the unix file system there are 3 sets of permissions:
+* User permissions - aka owner permissions
+* Group permissions - users with same group id as owner
+* Other Permissions - users not in the same group as owner 
+* These bits are at different permissions and are defined in the values below.
+*/
 bool check_permissions(ino_t fh, string operation)
 {
-   // cout << "fh: " << fh  << " ilist.count: " << dec << ilist.count << endl;
+   //check if valid fh has been given
     if(fh < 2)// || ilist.count < fh)
     {
         cout << "Invalid fh.\n";
@@ -293,23 +300,22 @@ bool check_permissions(ino_t fh, string operation)
     uid_t file_owneruid = ilist.entry[fh].metadata.st_uid;
     gid_t file_ownergid = ilist.entry[fh].metadata.st_gid;
     mode_t file_permissions = ilist.entry[fh].metadata.st_mode; 
-    //cout << "file_owneruid: " << file_owneruid << endl;
-    //cout << "cur_uid: " << cur_uid << endl;
+    
     /* octal values for different flag permissions
      * will simply do a bitwise AND to determine if user has permissions
      * */
-    mode_t uread_mode = 400;
-    mode_t uwrite_mode = 200;
-    mode_t uexec_mode = 100;
-    mode_t gread_mode = 040;
-    mode_t gwrite_mode = 020;
-    mode_t gexec_mode = 010;
-    mode_t oread_mode = 004;
-    mode_t owrite_mode = 002;
-    mode_t oexec_mode = 001;
-    mode_t result = 0;
+    mode_t uread_mode = 400; //user_read
+    mode_t uwrite_mode = 200;//user_write
+    mode_t uexec_mode = 100;//User_exec
+    mode_t gread_mode = 040;//group read
+    mode_t gwrite_mode = 020;// group write
+    mode_t gexec_mode = 010;//group exec
+    mode_t oread_mode = 004;//other read
+    mode_t owrite_mode = 002;//other write
+    mode_t oexec_mode = 001;//other exec
+    mode_t result = 0; //value to return which will be converted to boolean value
     
-    //check if uid's gid's match
+    //check if current user's uid matches with the file owners uid
     bool is_owner = false;
     if(cur_uid == file_owneruid)
     {
@@ -320,6 +326,7 @@ bool check_permissions(ino_t fh, string operation)
         is_owner = false;
     }
     
+    //check if the current user's gid matches with the file owners gid
     bool is_group = false; 
     if(cur_gid == file_ownergid)
     {
@@ -329,19 +336,28 @@ bool check_permissions(ino_t fh, string operation)
     {
         is_group = false;
     }
-    
+    /* Depending on the operation given 
+    * perform one of the following bitwise operations
+    * using the file's permissions and the octal value for that permission.
+    * A value can be converted to a boolean, where any value greater than 0
+    * is considered true. Therefore if a file has given the permission
+    * the result of the bitwise operation will be positive -> true.
+    */
     if(operation == "read")
     {
         if(is_owner)
         {
+          //bitwise & using filepermission with user read permission value
           return file_permissions&uread_mode;
         }
         else if(is_group)
         {
+          //bitwise & using filepermission with group read permission value
           return file_permissions&gread_mode;
         }
         else
         {
+        //bitwise & using filepermission with other read permission value  
          return file_permissions&oread_mode;   
         }
         return false;
@@ -377,7 +393,8 @@ bool check_permissions(ino_t fh, string operation)
         {
           return file_permissions&oexec_mode;   
         }
-      //won't need as we will not have executables
+      //won't need as we will not have executables 
+      //within our filesystem
       return false;
     }
     return false;
@@ -393,15 +410,20 @@ int my_mkdir( const char *path, mode_t mode ) {
 
 // called at line #203 of bbfs.cg
 int my_unlink( const char *path ) {
+  //split path and place into different positions
+  //within vector, seperated at '/'
   vector<string> v = split(string(path),"/");
+  //file name is last element within vector
   string fileName = v.back();
   string dirpath = join(v, "/");
   ino_t fh = find_ino(path);
+  //find_ino returns 0 when file can not be found
   if(fh == 0)
   {
     cout << "File Not Found\n";
     return an_err;
   }
+  //map::find returns pointer to end of map if key cannot be found within map
   if(open_files.find(fh) != open_files.end())
   {
     if(open_files.at(fh) > 0)
@@ -412,6 +434,8 @@ int my_unlink( const char *path ) {
   }
   else
   {
+    //check if current user has permissions to write to file 
+    //unlink is considered a write operation within unix
     if(check_permissions(fh,"write") == false)
     {
       uid_t cur_uid = geteuid(); 
@@ -600,15 +624,17 @@ int my_link(const char *path, const char *newpath) {
  * 
  * */
 // called at line #296 of bbfs.c
+//TODO: check with TA if chmod requires a permission check on file
+// add check to see if valid mode entered
 int my_chmod(const char *path, mode_t mode) {
   ino_t fh = find_ino(path);
-  //not sure if it is allowed to chan
-  
+  //check to see if valid file handle is given
   if ( fh > 2 )
   {
-  ilist.entry[fh].metadata.st_mode =  mode;
-  cout << "Permissions changed on: \"" << path << "\"" << endl;
-  return 0;
+    //simply overwrite the files mode data structure with user mode
+    ilist.entry[fh].metadata.st_mode =  mode;
+    cout << "Permissions changed on: \"" << path << "\"" << endl;
+    return 0;
   }
   cout << "Failed to find file: \"" << path << "\"" << endl;
   return an_err;  
@@ -641,7 +667,8 @@ int my_chown(const char *path, uid_t uid, gid_t gid) {
     //getgrgid(st.st_gid)->gr_name,     // group name
     uid_t file_owneruid = 0;// ilist.entry[fh].metadata.st_uid;
     uid_t cur_uid = geteuid(); //Payne also uses this function when making files
-    ino_t fh = find_ino(path);;
+    ino_t fh = find_ino(path);
+    //find_ino returns 0 if file cannot be found
     if ( fh == 0 ) 
     {
         cout << "Filepath: \"" << path << "\" not found.\n";
@@ -650,6 +677,7 @@ int my_chown(const char *path, uid_t uid, gid_t gid) {
     else 
     {
         //for now just comparing uids
+        //get file onwer uid
         uid_t file_owneruid = ilist.entry[fh].metadata.st_uid;
         //group_id to be used if user also specifies group
         gid_t file_ownergid = ilist.entry[fh].metadata.st_gid;
@@ -660,6 +688,7 @@ int my_chown(const char *path, uid_t uid, gid_t gid) {
           //don't change gid if gid is -1
          if(gid != 0)
          {
+           //overwrite file's associated gid with new gid
             ilist.entry[fh].metadata.st_gid = gid;
             cout << "changed gid to: " << gid << endl;
             //cout << "File Group changed to: " <<  getgrgid(ilist.entry[fh].metadata.st_gid)->gr_name << endl;
@@ -768,21 +797,22 @@ int my_open( const char *path, int flags ) {
 
 // called at line #411 of bbfs.c  Note that our firt arg is an fh not an fd
 int my_pread( int fh, char *buf, size_t size, off_t offset ) {
-    //cout << "ilist.entry[fh].data.size() = " << ilist.entry[fh].data.size() << endl;
-    
+    //if the given offset is larger than the files data return an error
     if(offset < 0 || ilist.entry[fh].data.size() < offset)
     {
         return an_err;
     }   
+    //if the offset is at the end of the file return 0
     if(offset == ilist.entry[fh].data.size() - 1)
     {
         return 0;
     }
-    
+    //check file permissions before allowing the read
     if(check_permissions(fh,"read"))
     {
         //buf = new char[size + 1];
         int i;  
+        //read data from file character by character
         for(i = 0; i < size; i++)
         {
             if(ilist.entry[fh].data[offset + i] == '\0')
@@ -806,12 +836,14 @@ int my_pread( int fh, char *buf, size_t size, off_t offset ) {
 }  
 
 // called at line #439 of bbfs.c  Note that our firt arg is an fh not an fd
+//TODO: add check for valid file handle
 int my_pwrite( int fh, const char *buf, size_t size, off_t offset ) 
 {
-  
+  //if offset is larger than file size return error
   if(offset < 0 || ilist.entry[fh].data.size() < offset){return an_err;}
+  //if offset is as large as the file return 0;
   if(offset == ilist.entry[fh].data.size() -1){return 0;}
-  
+  //test if current user has write permissions to the file
   if(check_permissions(fh,"write"))
   {
     int i = 0;
@@ -842,7 +874,7 @@ int my_statvfs(const char *fpath, struct statvfs *statv) {
 
 // called at line #530 of bbfs.c
 int my_close( int fh ) {
-    
+  //check for valid file handle
   if ( fh > 2 )
   {
     cout << "Closing file, fh = " << fh << endl;
@@ -861,7 +893,7 @@ int my_close( int fh ) {
      cout << "File with fh: \"" << fh << "\" not found.\n";
      return an_err;
     }
-    //if no more files open
+    //if no more files open remove file from open_files map
     if(open_files.at(fh) <= 0)
     {
         //remove file from open_files map
@@ -917,10 +949,11 @@ int my_access( const char *fpath, int mask ) {
      *  For now though, only concerned with UIDs as
      *  no way of really 'logging in' with a different GID
      *  Guess you could technically use chown to do this. 
-     * Will implement later.
-     * 
-     *  NEED TO USE MASK SOMEHOW 
      * */
+     
+    //Current workaround is to convert the mask which is a char to mode_t
+    //which results in these specific ascii values for the
+    //the characters : r, w , e , f
     int read_val = 114;
     int write_val = 119;
     int exec_val = 120;
@@ -932,6 +965,7 @@ int my_access( const char *fpath, int mask ) {
     uid_t file_owneruid = 0;// ilist.entry[fh].metadata.st_uid;
     uid_t cur_uid = geteuid(); //Payne also uses this function when making files
     ino_t fh = find_ino(fpath);
+    //fh is a reserved file handle. Return an error
     if ( fh == 0 ) 
     {
         cout << "Filepath: \"" << fpath << "\" not found.\n";
@@ -939,8 +973,12 @@ int my_access( const char *fpath, int mask ) {
     } 
     else 
     {   
+        //compare mask value to 'f' 
+        //the 'f' access check simply checks
+        //if the file exists
         if(mask == file_val)
         {
+          //earlier check determines if file handle was valid
           if ( fh == 0 ) 
           {
             cout << "Filepath: \"" << fpath << "\" not found.\n";
@@ -1000,6 +1038,7 @@ int my_access( const char *fpath, int mask ) {
         }
         else
         {
+          //incorrect characters entered return error value
          cout << "Invalid permission value entered.(Needs to be: r , w , or x)\n";
          return an_err;   
         }
