@@ -532,12 +532,14 @@ int my_symlink(const char *path, const char *link) {
 int my_rename( const char *path, const char *newpath ) {
 
   int i = 0;
+
   vector<string> v = split( path, "/" );
   string old_file_name = v.back();
   v.pop_back();
 
   ino_t old_parent_ino = find_ino(join(v, "/"));
   ino_t old_file_ino = find_ino(path);
+  
   if(old_file_ino == 0)
   {
      cout << "Failed to find file: \"" << path << "\"" << endl;
@@ -551,29 +553,59 @@ int my_rename( const char *path, const char *newpath ) {
          << " does not have write permissions to rename this file.\n"; 
          return an_err;   
   }
+  
   v = split( newpath, "/" );
   string new_file_name = v.back();
   v.pop_back();
 
   ino_t new_parent_ino = find_ino(join(v, "/"));
   ino_t new_file_ino = find_ino(path);
-  for(vector<dirent_frame>::iterator it = ilist.entry[old_parent_ino].dentries.begin(); it !=  ilist.entry[old_parent_ino].dentries.end(); ++it){
-    if(it->the_dirent.d_name == old_file_name)
-    {
-      //return 0;
-      //dirent char d_name[]  
-     //it->the_dirent.d_name = new_file_name.c_str();
-     for(i = 0; i < new_file_name.size() ; i++)
-     {
-         it->the_dirent.d_name[i] = new_file_name[i];
-     }
-     //slight workaround
-     //however if the filename is too long then this could very well
-     //cause a segfault
-     it->the_dirent.d_name[i] = '\0';
-     return 0;
+  
+  
+  if(old_parent_ino == new_parent_ino){ // change the name of the file,
+    //cout << "directories match!";
+    for(vector<dirent_frame>::iterator it = ilist.entry[old_parent_ino].dentries.begin(); it !=  ilist.entry[old_parent_ino].dentries.end(); ++it){
+      if(it->the_dirent.d_name == old_file_name){
+        for( i = 0; i < new_file_name.size() ; i++)
+        {
+          it->the_dirent.d_name[i] = new_file_name[i];
+        }
+        //slight workaround
+        //however if the filename is too long then this could very well
+        //cause a segfault
+        it->the_dirent.d_name[i] = '\0';
+        return 0;
+      }
     }
+  }
+  else if(old_parent_ino != new_parent_ino) { // move the file to new directory // error checking for file already existing add this check
+    if(find_ino(newpath) == 0){
+      // create new dirent
+      dirent_frame df;
+      df.the_dirent.d_ino = old_file_ino;
+      strcpy(df.the_dirent.d_name, new_file_name.c_str());
+      ilist.entry[new_parent_ino].dentries.push_back(df);
+      //cout << "create new dirent " << df.the_dirent.d_name << " with d_ino: " << old_file_ino << endl;
     
+      for(vector<dirent_frame>::iterator it = ilist.entry[old_parent_ino].dentries.begin(); it !=  ilist.entry[old_parent_ino].dentries.end(); ++it){
+        if(it->the_dirent.d_name == old_file_name){
+          //delete this dirent
+          ilist.entry[old_parent_ino].dentries.erase(it);
+          return 0;
+        }
+      }      
+    }
+    else {
+      cout << "File " << newpath << " already exists" << endl;
+      return -1;
+        
+    }
+  }
+  else {
+      //cout << "ERROR!!" << endl;
+    return -1;
+      
+      
   }
 
 }
