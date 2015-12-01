@@ -459,7 +459,7 @@ int my_unlink( const char *path ) {
             //If the inode number is the same as the file we want to delete
             //if(ilist.entry[fh].metadata.st_ino == )
             cout << "fh: " << fh << " d_ino: " << dentry_it->the_dirent.d_ino << "\n";
-            if(fh == dentry_it->the_dirent.d_ino)
+            if(fh == dentry_it->the_dirent.d_ino && fileName == dentry_it->the_dirent)
             {
               //Delete the file from the directory
               ilist_it->second.dentries.erase(dentry_it);
@@ -492,7 +492,7 @@ int my_rmdir( const char *path ) {
     errno = ENOTDIR;
     return an_err;
   }
-  if ( ! the_dir.dentries.size() > 2 ) {  // for . and ..
+  if (the_dir.dentries.size() > 2 ) {  // for . and ..
     cdbg << "not empty\n";
     errno = ENOTEMPTY;
     return an_err;
