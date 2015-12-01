@@ -424,14 +424,6 @@ int my_unlink( const char *path ) {
     return an_err;
   }
   //map::find returns pointer to end of map if key cannot be found within map
-  if(open_files.find(fh) != open_files.end())
-  {
-    if(open_files.at(fh) > 0)
-    {
-      cout << "File In Use! Cannot Unlink!\n";
-      return an_err;      
-    }
-  }
   else
   {
     //check if current user has permissions to write to file 
@@ -448,7 +440,7 @@ int my_unlink( const char *path ) {
     {
       (ilist.entry[fh].metadata.st_nlink)--;
     }
-    if(ilist.entry[fh].metadata.st_nlink == 0) //If the number of links to a file is 0, delete the file
+    if(ilist.entry[fh].metadata.st_nlink == 0 && open_files.find(fh) == open_files.end()) //If the number of links to a file is 0, delete the file
     {
       //ilist.entry[fh].metadata.st_ino = DELETED;
       map<ino_t, File>::iterator ilist_it;
@@ -476,9 +468,13 @@ int my_unlink( const char *path ) {
           }
         }
       }
-      //Final Step to Deleting a file
-      ilist_it = ilist.entry.find(fh);
-      ilist.entry.erase(ilist_it);
+      
+
+      if(open_files.find(fh) == open_files.end() && ilist.entry[fh].metadata.st_nlink == 0){
+        //If file is not open & nlink is 0 the Final Step is to Delete the file / remove its inode
+        ilist_it = ilist.entry.find(fh);
+        ilist.entry.erase(ilist_it);
+      }
     }
   }
   return 0;
@@ -621,24 +617,22 @@ int my_rename( const char *path, const char *newpath ) {
 
 // called at line #279 of bbfs.c
 int my_link(const char *path, const char *newpath) {
+  ino_t fh = find_ino(path);
+  if ( S_ISDIR( ilist.entry[fh].metadata.st_mode ) ) {
+    errno = EMLINK;  // only one link to each directory.
+    return an_err; 
+  }
   vector<string> v = split(string(newpath),"/");
   string tail = v.back();
-  string dirpath = join(v, "/");
-  ino_t fh = find_ino(path);
-  if ( ! S_ISDIR( ilist.entry[fh].metadata.st_mode ) ) {
-    errno = EPERM; 
-    return an_err; 
-  }
-  ino_t fh2 = find_ino(newpath);
-  if ( ! S_ISDIR( ilist.entry[fh2].metadata.st_mode ) ) {
-    errno = EPERM; 
-    return an_err; 
-  }
-  ++ ilist.entry[fh].metadata.st_nlink;
-  // check for overflow.
-  dirent d;
-  d.d_ino = fh;
-  strcpy( d.d_name, tail.c_str() );
+  v.pop_back();                  // get rid of tail
+  string dirpath = join(v, "/"); // the remaining (initial) part of newpath
+  ino_t fh2 = find_ino(dirpath);
+  // if dirpath didn't name a directory, find_ino() would have failed.
+  ++ ilist.entry[fh].metadata.st_nlink; // no overflow since fh is regular.
+  dirent_frame df;
+  strcpy(df.the_dirent.d_name, tail.c_str() );
+  df.the_dirent.d_ino  = fh;  
+  ilist.entry[fh2].dentries.push_back(df);
   return ok;  
 }  
 
@@ -1904,6 +1898,17 @@ int main(int argc, char* argv[] ) {
        cin >> new_fname;
        my_rename(file.c_str(), new_fname.c_str());
     }
+    else if (op == "ln")
+    {
+      string strlink;
+      cin >> strlink;
+     
+      const char* newpath = strlink.c_str();
+      
+      my_link(file.c_str(), newpath);
+    
+    
+    }
     else if (op == "unlink")
     {
       //~ string fileName;
@@ -1973,4 +1978,3 @@ int main(int argc, char* argv[] ) {
   describe_file( "/junk" );
   cout << endl;
 }
-
