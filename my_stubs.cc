@@ -459,7 +459,7 @@ int my_unlink( const char *path ) {
             //If the inode number is the same as the file we want to delete
             //if(ilist.entry[fh].metadata.st_ino == )
             cout << "fh: " << fh << " d_ino: " << dentry_it->the_dirent.d_ino << "\n";
-            if(fh == dentry_it->the_dirent.d_ino && fileName == dentry_it->the_dirent)
+            if(fh == dentry_it->the_dirent.d_ino && fileName == dentry_it->the_dirent.d_name)
             {
               //Delete the file from the directory
               ilist_it->second.dentries.erase(dentry_it);
@@ -1901,8 +1901,8 @@ int main(int argc, char* argv[] ) {
     else if (op == "ln")
     {
       string strlink;
+      cout << "Enter the name of the link you want: ";
       cin >> strlink;
-     
       const char* newpath = strlink.c_str();
       
       my_link(file.c_str(), newpath);
