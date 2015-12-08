@@ -654,9 +654,18 @@ int my_link(const char *path, const char *newpath) {
 // add check to see if valid mode entered
 int my_chmod(const char *path, mode_t mode) {
   ino_t fh = find_ino(path);
+  uid_t cur_uid = geteuid(); //Payne also uses this function when making files
   //check to see if valid file handle is given
   if ( fh > 2 )
   {
+      //check if current user has write permissions to edit permissions of file
+    if(check_permissions(fh,"write") == false)
+    {
+        cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+             << " does not have write access to " << path << endl;
+             return an_err;   
+    }  
+    
     //simply overwrite the files mode data structure with user mode
     ilist.entry[fh].metadata.st_mode =  mode;
     cout << "Permissions changed on: \"" << path << "\"" << endl;
@@ -715,6 +724,15 @@ int my_chown(const char *path, uid_t uid, gid_t gid) {
     } 
     else 
     {
+        //check if current user has write permissions to change owner of file
+        if(check_permissions(fh,"write") == false)
+        {
+            cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+                << " does not have write access to " << path << endl;
+                return an_err;   
+        }  
+        
+        
         //for now just comparing uids
         uid_t file_owneruid = ilist.entry[fh].metadata.st_uid;
         //group_id to be used if user also specifies group
