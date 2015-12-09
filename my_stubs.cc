@@ -621,7 +621,14 @@ int my_link(const char *path, const char *newpath) {
   if ( S_ISDIR( ilist.entry[fh].metadata.st_mode ) ) {
     errno = EMLINK;  // only one link to each directory.
     return an_err; 
+  } 
+  ino_t fhnew = find_ino(newpath);
+  if(fhnew > 1)
+  {
+	  cout << "\'" << newpath << "\' already exists" << endl; 
+	  return an_err;
   }
+  
   vector<string> v = split(string(newpath),"/");
   string tail = v.back();
   v.pop_back();                  // get rid of tail
@@ -654,18 +661,9 @@ int my_link(const char *path, const char *newpath) {
 // add check to see if valid mode entered
 int my_chmod(const char *path, mode_t mode) {
   ino_t fh = find_ino(path);
-  uid_t cur_uid = geteuid(); //Payne also uses this function when making files
   //check to see if valid file handle is given
   if ( fh > 2 )
   {
-      //check if current user has write permissions to edit permissions of file
-    if(check_permissions(fh,"write") == false)
-    {
-        cout << "Current user: " << getpwuid(cur_uid)->pw_name  
-             << " does not have write access to " << path << endl;
-             return an_err;   
-    }  
-    
     //simply overwrite the files mode data structure with user mode
     ilist.entry[fh].metadata.st_mode =  mode;
     cout << "Permissions changed on: \"" << path << "\"" << endl;
@@ -724,15 +722,6 @@ int my_chown(const char *path, uid_t uid, gid_t gid) {
     } 
     else 
     {
-        //check if current user has write permissions to change owner of file
-        if(check_permissions(fh,"write") == false)
-        {
-            cout << "Current user: " << getpwuid(cur_uid)->pw_name  
-                << " does not have write access to " << path << endl;
-                return an_err;   
-        }  
-        
-        
         //for now just comparing uids
         uid_t file_owneruid = ilist.entry[fh].metadata.st_uid;
         //group_id to be used if user also specifies group
@@ -784,14 +773,6 @@ int my_truncate(const char *path, off_t newsize) {
     } 
     else 
     {
-        if(check_permissions(fh,"write") == false)
-        {
-          uid_t cur_uid = geteuid(); 
-          cout << "Current user: " << getpwuid(cur_uid)->pw_name  
-               << " does not have write permissions to truncate this file.\n"; 
-          return an_err;   
-        }        
-        
      //exploit the fact that we have strings here
      //when the string is increased
      //the function sets the added characters to null
@@ -827,7 +808,7 @@ int my_open( const char *path, int flags ) {
     return -1;    
   }
   else if ( fh > 2 ) {
-    cout << "file opened, fh = " << fh << endl;
+    //~ cout << "file opened, fh = " << fh << endl;
       //search open_file map for fh
      //returns map::end() if nothing found
     if(open_files.find(fh) != open_files.end())
@@ -1143,7 +1124,7 @@ int my_ftruncate( ino_t fh, off_t offset ) {
     //ilist.entry[fh].data.size() < offset
     /* TODO: check file permissions to see if can write to file 
      * */
-    if ( fh < 2 ) 
+    if ( fh < 2 || fh > ilist.count) 
     {
         cout << "Fh: \"" << fh << "\" cannot be truncated.\n";
         return an_err;
@@ -1156,15 +1137,6 @@ int my_ftruncate( ino_t fh, off_t offset ) {
     }
     else 
     {
-        if(check_permissions(fh,"write") == false)
-        {
-            uid_t cur_uid = geteuid(); 
-            cout << "Current user: " << getpwuid(cur_uid)->pw_name  
-            << " does not have write permissions to truncate this file.\n"; 
-            return an_err;   
-        }
-        
-        
      //exploit the fact that we have strings here
      //when the string is increased
      //the function sets the added characters to null
@@ -1752,28 +1724,42 @@ int main(int argc, char* argv[] ) {
   { 
     string op, file;
     // if ( myin.eof() ) exit(0);
-    cout << "Which op and file? " << endl;
+    cout << "Which op and file?\n(help me for a list of functions)\n(clear clear clear to clear input buffers)" << endl;
     (myin.good() ? myin : cin) >> op >> file;
     if ( op != "exit" ){record << op << " " << file << endl;}
     if (op == "?" || op == "help") //List available operations
     {
-          //~ cout << "Operations: \n"; 
-          //~ cout << "\t
-          //~ cout << "\t
-          //~ cout << "\t
-          //~ cout << "\t
-          //~ cout << "\t 
+          cout << "Operations:" << endl; 
+          cout << "\t ls\t\t/"     << endl;
+          cout << "\t lslr\t\t/"   << endl;
+          cout << "\t creat\t\t <file>" << endl;
+          cout << "\t rename\t\t <file>" << endl;
+          cout << "\t open\t\t <file>" << endl;
+          cout << "\t close\t\t <file>" << endl;
+          cout << "\t link\t\t <file>" << endl;
+          cout << "\t unlink\t\t <file>" << endl;
+          cout << "\t read\t\t <file>" << endl;
+          cout << "\t write\t\t <file>" << endl;
+          cout << "\t mkdir\t\t <file>" << endl;
+          cout << "\t rmdir\t\t <file>" << endl;
+          cout << "\t show\t\t <file>" << endl;
+          cout << "\t chmod\t\t <file>" << endl;
+          cout << "\t chown\t\t <file>" << endl;
+          cout << "\t access\t\t <file>" << endl;
+          cout << "\t truncate\t <file>" << endl;
+          cout << "\t ftruncate\t <file>" << endl;
     }
+    else if (op == "clear" && file == "clear")
+    {
+		cin.clear();
+		//~ cin.flush();
+	}
     else if (op == "play"  ) // accepts input from file instead of keyboard
     {
         ifstream in;
         string playFile;
         cout << "Enter the name of the file to play: ";
-        cin >> playFile;
-        
-   
-        
-        
+        cin >> playFile;       
     } 
     else if (op == "save"  ) // saves dialog to specified file
     {
@@ -1933,7 +1919,7 @@ int main(int argc, char* argv[] ) {
        cin >> new_fname;
        my_rename(file.c_str(), new_fname.c_str());
     }
-    else if (op == "ln")
+    else if (op == "link")
     {
       string strlink;
       cout << "Enter the name of the link you want: ";
