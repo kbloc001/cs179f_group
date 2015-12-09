@@ -1724,7 +1724,7 @@ int main(int argc, char* argv[] ) {
   { 
     string op, file;
     // if ( myin.eof() ) exit(0);
-    cout << "Which op and file?\n(help me for a list of functions)\n(clear clear to clear input buffers)" << endl;
+    cout << "Which op and file?\n(help me for a list of functions)\n(clear clear clear to clear input buffers)" << endl;
     (myin.good() ? myin : cin) >> op >> file;
     if ( op != "exit" ){record << op << " " << file << endl;}
     if (op == "?" || op == "help") //List available operations
