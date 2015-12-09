@@ -784,6 +784,14 @@ int my_truncate(const char *path, off_t newsize) {
     } 
     else 
     {
+        if(check_permissions(fh,"write") == false)
+        {
+          uid_t cur_uid = geteuid(); 
+          cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+               << " does not have write permissions to truncate this file.\n"; 
+          return an_err;   
+        }        
+        
      //exploit the fact that we have strings here
      //when the string is increased
      //the function sets the added characters to null
@@ -1135,7 +1143,7 @@ int my_ftruncate( ino_t fh, off_t offset ) {
     //ilist.entry[fh].data.size() < offset
     /* TODO: check file permissions to see if can write to file 
      * */
-    if ( fh < 2 || fh > ilist.count) 
+    if ( fh < 2 ) 
     {
         cout << "Fh: \"" << fh << "\" cannot be truncated.\n";
         return an_err;
@@ -1148,6 +1156,15 @@ int my_ftruncate( ino_t fh, off_t offset ) {
     }
     else 
     {
+        if(check_permissions(fh,"write") == false)
+        {
+            uid_t cur_uid = geteuid(); 
+            cout << "Current user: " << getpwuid(cur_uid)->pw_name  
+            << " does not have write permissions to truncate this file.\n"; 
+            return an_err;   
+        }
+        
+        
      //exploit the fact that we have strings here
      //when the string is increased
      //the function sets the added characters to null
